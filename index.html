@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Footbot - AI Football Predictor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">⚽ FOOTBOT</div>
+                <p class="tagline">AI Football Match Predictor</p>
+            </div>
+        </header>
+
+        <!-- Main Chat Interface -->
+        <main class="chat-main">
+            <!-- Chat Area -->
+            <section class="chat-area">
+                <div id="chatbot-messages" class="chatbot-messages">
+                    <div class="chat-message bot-message">
+                        <p>🤖 Welcome to Footbot! I'm your AI football predictor. Ask me to predict any match, compare teams, or analyze their stats. Let's make some predictions! ⚽</p>
+                    </div>
+                </div>
+
+                <div class="chatbot-input-area">
+                    <input type="text" id="chatbot-input" placeholder="Predict a match... (e.g., Liverpool vs Man City)" autocomplete="off">
+                    <button id="send-btn" class="send-btn">➤</button>
+                </div>
+            </section>
+
+            <!-- Info Panel -->
+            <aside class="info-panel">
+                <h3>Available Teams</h3>
+                <div class="teams-list">
+
+                <h3>Supported Leagues</h3>
+                <div class="leagues-grid">
+                    <div class="league-item">
+                        <span class="league-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+                        <span class="league-name">Premier League</span>
+                        <span class="league-country">England</span>
+                    </div>
+                    <div class="league-item">
+                        <span class="league-flag">🇪🇸</span>
+                        <span class="league-name">La Liga</span>
+                        <span class="league-country">Spain</span>
+                    </div>
+                    <div class="league-item">
+                        <span class="league-flag">🇮🇹</span>
+                        <span class="league-name">Serie A</span>
+                        <span class="league-country">Italy</span>
+                    </div>
+                    <div class="league-item">
+                        <span class="league-flag">🇩🇪</span>
+                        <span class="league-name">Bundesliga</span>
+                        <span class="league-country">Germany</span>
+                    </div>
+                    <div class="league-item">
+                        <span class="league-flag">🇫🇷</span>
+                        <span class="league-name">Ligue 1</span>
+                        <span class="league-country">France</span>
+                    </div>
+                    <div class="league-item">
+                        <span class="league-flag">🇬🇷</span>
+                        <span class="league-name">Super League</span>
+                        <span class="league-country">Greece</span>
+                    </div>
+                </div>
+
+                <h3>Seasons Available</h3>
+                <div class="seasons-list">
+                    <span class="season-badge">2023-24</span>
+                    <span class="season-badge">2024-25</span>
+                    <span class="season-badge">2025-26</span>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Footbot AI Predictor © 2026 | Advanced Football Analytics</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
