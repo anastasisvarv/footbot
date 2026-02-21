@@ -1,0 +1,66 @@
+version: "3.1"
+
+stories:
+  - story: greet and predict
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: predict_match
+      - action: action_predict_match
+
+  - story: greet and get standings
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: get_standings
+      - action: action_get_standings
+
+  - story: predict then ask stats
+    steps:
+      - intent: predict_match
+      - action: action_predict_match
+      - intent: get_team_stats
+      - action: action_get_team_stats
+
+  - story: compare then predict
+    steps:
+      - intent: compare_teams
+      - action: action_compare_teams
+      - intent: predict_match
+      - action: action_predict_match
+
+  - story: ask form then h2h then predict
+    steps:
+      - intent: get_recent_form
+      - action: action_get_recent_form
+      - intent: get_head_to_head
+      - action: action_get_head_to_head
+      - intent: predict_match
+      - action: action_predict_match
+
+  - story: standings then team stats
+    steps:
+      - intent: get_standings
+      - action: action_get_standings
+      - intent: get_team_stats
+      - action: action_get_team_stats
+
+  - story: help then predict
+    steps:
+      - intent: help
+      - action: utter_help
+      - intent: predict_match
+      - action: action_predict_match
+
+  - story: full session
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: get_standings
+      - action: action_get_standings
+      - intent: get_team_stats
+      - action: action_get_team_stats
+      - intent: predict_match
+      - action: action_predict_match
+      - intent: goodbye
+      - action: utter_goodbye

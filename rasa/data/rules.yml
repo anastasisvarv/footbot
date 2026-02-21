@@ -1,0 +1,52 @@
+version: "3.1"
+
+rules:
+  - rule: Say hello on greeting
+    steps:
+      - intent: greet
+      - action: utter_greet
+
+  - rule: Say goodbye on farewell
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+
+  - rule: Show help menu
+    steps:
+      - intent: help
+      - action: utter_help
+
+  - rule: Handle fallback
+    steps:
+      - intent: nlu_fallback
+      - action: utter_default
+
+  - rule: Predict match on intent
+    steps:
+      - intent: predict_match
+      - action: action_predict_match
+
+  - rule: Get team stats on intent
+    steps:
+      - intent: get_team_stats
+      - action: action_get_team_stats
+
+  - rule: Compare teams on intent
+    steps:
+      - intent: compare_teams
+      - action: action_compare_teams
+
+  - rule: Get standings on intent
+    steps:
+      - intent: get_standings
+      - action: action_get_standings
+
+  - rule: Get recent form on intent
+    steps:
+      - intent: get_recent_form
+      - action: action_get_recent_form
+
+  - rule: Get head to head on intent
+    steps:
+      - intent: get_head_to_head
+      - action: action_get_head_to_head

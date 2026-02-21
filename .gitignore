@@ -1,1 +1,38 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Rasa
+rasa/models/
+rasa/.rasa/
+rasa/results/
+rasa/.cache/
+
+# Cache & logs
+data/football_cache.json
+logs/
+*.log
+footbot.pids
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

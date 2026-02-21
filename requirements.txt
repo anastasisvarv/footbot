@@ -1,0 +1,24 @@
+# Footbot Python dependencies
+# Requires Python 3.10.x (Rasa 3.6.x does NOT support 3.11+)
+# Recommended: pyenv install 3.10.14 && pyenv local 3.10.14
+
+# Rasa NLU + dialogue framework
+rasa==3.6.21
+
+# TensorFlow — macOS arm64 (Apple Silicon) specific
+# Comment these two out and use plain tensorflow==2.11.0 on x86_64 Linux
+tensorflow-macos==2.11.0
+tensorflow-metal==0.7.1
+
+# Data fetching & scraping
+requests==2.28.2
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Numerical / prediction
+numpy==1.24.3
+scipy==1.11.4
+
+# Utilities
+python-dotenv==1.0.0
+aiohttp==3.8.6

@@ -1,0 +1,278 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - hey
+      - hello
+      - hi
+      - good morning
+      - good evening
+      - hey there
+      - hi footbot
+      - hello footbot
+      - what's up
+      - howdy
+
+  - intent: goodbye
+    examples: |
+      - bye
+      - goodbye
+      - see you around
+      - see ya
+      - later
+      - good night
+      - take care
+      - ciao
+      - quit
+      - exit
+
+  - intent: help
+    examples: |
+      - help
+      - what can you do
+      - how do i use this
+      - what are the commands
+      - show me what you can do
+      - i need help
+      - capabilities
+      - features
+      - how does this work
+      - what can footbot do
+
+  - intent: predict_match
+    examples: |
+      - predict [Liverpool](team:home) vs [Arsenal](team:away)
+      - predict [Manchester City](team:home) vs [Chelsea](team:away)
+      - predict [Real Madrid](team:home) vs [Barcelona](team:away)
+      - predict [Bayern Munich](team:home) vs [Borussia Dortmund](team:away)
+      - predict [PSG](team:home) vs [Marseille](team:away)
+      - predict [Inter](team:home) vs [Juventus](team:away)
+      - predict [Olympiacos](team:home) vs [PAOK](team:away)
+      - predict [AEK Athens](team:home) vs [Panathinaikos](team:away)
+      - [Arsenal](team:home) vs [Tottenham](team:away) prediction
+      - who will win [Liverpool](team:home) vs [Manchester United](team:away)
+      - [Chelsea](team:home) vs [Arsenal](team:away) who wins
+      - forecast [Manchester City](team:home) vs [Liverpool](team:away)
+      - [Atletico Madrid](team:home) vs [Sevilla](team:away) match prediction
+      - [Napoli](team:home) vs [AC Milan](team:away) prediction
+      - [Bayer Leverkusen](team:home) vs [RB Leipzig](team:away) result prediction
+      - predict outcome [Lazio](team:home) vs [Roma](team:away)
+      - [Brighton](team:home) vs [Newcastle](team:away) who wins
+      - [Aston Villa](team:home) vs [West Ham](team:away) prediction
+      - [Monaco](team:home) vs [Lyon](team:away) prediction
+      - [Valencia](team:home) vs [Real Betis](team:away) who will win
+      - predict [ARIS](team:home) vs [Asteras Tripolis](team:away)
+      - [Borussia Dortmund](team:home) vs [Bayern Munich](team:away) prediction
+      - what is the prediction for [Liverpool](team:home) vs [Arsenal](team:away)
+      - make a prediction [Manchester City](team:home) vs [Tottenham](team:away)
+
+  - intent: get_team_stats
+    examples: |
+      - [Liverpool](team) stats
+      - show me [Arsenal](team) statistics
+      - [Manchester City](team) stats
+      - how is [Real Madrid](team) performing
+      - [Barcelona](team) team statistics
+      - what are [Bayern Munich](team) stats
+      - tell me about [Juventus](team)
+      - [Inter](team) statistics
+      - [PSG](team) stats
+      - [Olympiacos](team) stats
+      - show [PAOK](team) team info
+      - [Chelsea](team) form and stats
+      - [Atletico Madrid](team) statistics
+      - [Napoli](team) recent stats
+      - [Borussia Dortmund](team) stats
+      - stats for [Marseille](team)
+      - [Lazio](team) team performance
+      - [AEK Athens](team) stats
+      - [Panathinaikos](team) statistics
+      - show me [Tottenham](team) stats
+      - [Newcastle](team) stats please
+      - how good is [Brighton](team)
+
+  - intent: compare_teams
+    examples: |
+      - compare [Liverpool](team:home) vs [Arsenal](team:away)
+      - compare [Real Madrid](team:home) and [Barcelona](team:away)
+      - [Manchester City](team:home) vs [Chelsea](team:away) comparison
+      - who is better [Bayern Munich](team:home) or [Borussia Dortmund](team:away)
+      - [Inter](team:home) versus [Juventus](team:away) comparison
+      - [PSG](team:home) vs [Marseille](team:away) side by side
+      - compare [Olympiacos](team:home) and [AEK Athens](team:away)
+      - which is stronger [Arsenal](team:home) or [Tottenham](team:away)
+      - [Real Madrid](team:home) vs [Atletico Madrid](team:away) who is stronger
+      - compare stats [Napoli](team:home) vs [AC Milan](team:away)
+      - [Liverpool](team:home) better than [Manchester United](team:away)?
+      - [Chelsea](team:home) vs [Newcastle](team:away) team comparison
+      - [Bayer Leverkusen](team:home) vs [RB Leipzig](team:away) comparison
+      - compare [Lazio](team:home) and [Roma](team:away)
+      - [PAOK](team:home) vs [Panathinaikos](team:away) comparison
+
+  - intent: get_standings
+    examples: |
+      - show [Premier League](league) table
+      - [Premier League](league) standings
+      - [La Liga](league) table
+      - [Serie A](league) standings
+      - [Bundesliga](league) table
+      - [Ligue 1](league) standings
+      - [Super League](league) Greece table
+      - [Greek Super League](league) standings
+      - top 5 [Premier League](league)
+      - who is leading the [La Liga](league)
+      - current [Bundesliga](league) standings
+      - show me [Serie A](league) table
+      - [Ligue 1](league) top teams
+      - league table [Super League](league)
+      - what is the [Premier League](league) table
+      - [Serie A](league) top 5
+      - who's top of [La Liga](league)
+      - [Bundesliga](league) current standings
+      - show [Ligue 1](league) top 5
+      - football standings
+
+  - intent: get_recent_form
+    examples: |
+      - [Liverpool](team) recent form
+      - show [Arsenal](team) last 5 matches
+      - [Real Madrid](team) form
+      - how has [Manchester City](team) been playing
+      - [Bayern Munich](team) recent results
+      - [Barcelona](team) last 5 games
+      - [Juventus](team) current form
+      - [PSG](team) last matches
+      - [Olympiacos](team) recent form
+      - [Inter](team) form guide
+      - what is [Chelsea](team) form
+      - [Atletico Madrid](team) recent results
+      - [Napoli](team) last 5
+      - [Borussia Dortmund](team) form
+      - [Marseille](team) recent games
+      - [AEK Athens](team) form
+      - [Liverpool](team) last few games
+      - recent results for [Arsenal](team)
+      - [Newcastle](team) form this season
+      - [Tottenham](team) recent form
+
+  - intent: get_head_to_head
+    examples: |
+      - [Liverpool](team:home) vs [Arsenal](team:away) head to head
+      - [Real Madrid](team:home) vs [Barcelona](team:away) head to head history
+      - [Manchester City](team:home) vs [Manchester United](team:away) h2h
+      - [Bayern Munich](team:home) vs [Borussia Dortmund](team:away) head to head
+      - [Inter](team:home) vs [Juventus](team:away) historical record
+      - [PSG](team:home) vs [Marseille](team:away) h2h record
+      - [Olympiacos](team:home) vs [PAOK](team:away) head to head
+      - history between [Chelsea](team:home) and [Arsenal](team:away)
+      - [Atletico Madrid](team:home) vs [Real Madrid](team:away) h2h
+      - [Napoli](team:home) vs [Juventus](team:away) historical results
+      - [Arsenal](team:home) vs [Tottenham](team:away) head to head stats
+      - [AEK Athens](team:home) vs [Panathinaikos](team:away) h2h
+      - past meetings [Liverpool](team:home) [Manchester United](team:away)
+      - all time record [Real Madrid](team:home) vs [Atletico Madrid](team:away)
+      - [Lazio](team:home) vs [Roma](team:away) derby history
+
+synonyms:
+  - synonym: Premier League
+    examples: |
+      - EPL
+      - English Premier League
+      - PL
+      - england league
+  - synonym: La Liga
+    examples: |
+      - Spanish League
+      - LaLiga
+      - spain league
+  - synonym: Serie A
+    examples: |
+      - Italian League
+      - italy league
+  - synonym: Bundesliga
+    examples: |
+      - German League
+      - germany league
+  - synonym: Ligue 1
+    examples: |
+      - French League
+      - france league
+  - synonym: Super League
+    examples: |
+      - Greek Super League
+      - Super League Greece
+      - Greek League
+      - greece league
+  - synonym: Manchester City
+    examples: |
+      - Man City
+      - MCFC
+      - Citizens
+  - synonym: Manchester United
+    examples: |
+      - Man Utd
+      - Man United
+      - MUFC
+      - Red Devils
+  - synonym: PSG
+    examples: |
+      - Paris Saint-Germain
+      - Paris SG
+      - Paris Saint Germain
+  - synonym: AC Milan
+    examples: |
+      - Milan
+      - Rossoneri
+  - synonym: Inter
+    examples: |
+      - Inter Milan
+      - Internazionale
+      - Nerazzurri
+  - synonym: Bayern Munich
+    examples: |
+      - Bayern
+      - FC Bayern
+      - Bayern Muenchen
+  - synonym: Borussia Dortmund
+    examples: |
+      - BVB
+      - Dortmund
+  - synonym: Bayer Leverkusen
+    examples: |
+      - Leverkusen
+  - synonym: RB Leipzig
+    examples: |
+      - Leipzig
+      - Red Bull Leipzig
+  - synonym: Atletico Madrid
+    examples: |
+      - Atletico
+      - Atleti
+  - synonym: AEK Athens
+    examples: |
+      - AEK
+  - synonym: Panathinaikos
+    examples: |
+      - PAO
+  - synonym: PAOK
+    examples: |
+      - PAOK FC
+  - synonym: Aston Villa
+    examples: |
+      - Villa
+  - synonym: Newcastle
+    examples: |
+      - Newcastle United
+      - NUFC
+  - synonym: West Ham
+    examples: |
+      - West Ham United
+      - Hammers
+  - synonym: Tottenham
+    examples: |
+      - Spurs
+      - Tottenham Hotspur
+  - synonym: Olympiacos
+    examples: |
+      - Olympiakos
