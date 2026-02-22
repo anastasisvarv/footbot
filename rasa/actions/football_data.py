@@ -3,14 +3,18 @@ Football data client.
 Fetches from football-data.org API (free tier) for major European leagues,
 and scrapes Greek Super League data from worldfootball.net.
 All results are cached in data/football_cache.json with 24-hour TTL.
+
+Team coverage: all teams in all 5 API-supported leagues are discovered
+dynamically from the standings endpoint, so no hardcoded list is needed.
 """
 
 import json
 import os
+import re
 import time
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -29,7 +33,7 @@ CACHE_TTL = 86_400  # 24 hours in seconds
 API_BASE = "https://api.football-data.org/v4"
 API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "")
 
-LEAGUE_CODES = {
+LEAGUE_CODES: Dict[str, str] = {
     "premier league": "PL",
     "la liga": "PD",
     "serie a": "SA",
@@ -37,41 +41,29 @@ LEAGUE_CODES = {
     "ligue 1": "FL1",
 }
 
-# Normalised team name → football-data.org team ID (most searched teams)
-TEAM_IDS: Dict[str, int] = {
-    "liverpool": 64,
-    "arsenal": 57,
-    "manchester city": 65,
-    "chelsea": 61,
-    "manchester united": 66,
-    "tottenham": 73,
-    "newcastle": 67,
-    "aston villa": 58,
-    "brighton": 397,
-    "west ham": 563,
-    "real madrid": 86,
-    "barcelona": 81,
-    "atletico madrid": 78,
-    "sevilla": 559,
-    "real betis": 558,
-    "valencia": 95,
-    "inter": 108,
-    "juventus": 109,
-    "ac milan": 98,
-    "napoli": 113,
-    "lazio": 110,
-    "roma": 100,
-    "bayern munich": 5,
-    "borussia dortmund": 4,
-    "bayer leverkusen": 3,
-    "rb leipzig": 721,
-    "vfl wolfsburg": 11,
-    "psg": 524,
-    "marseille": 516,
-    "lyon": 523,
-    "monaco": 548,
-    "nice": 522,
+# Fallback hardcoded IDs — used only if the dynamic index hasn't been built yet
+_FALLBACK_IDS: Dict[str, int] = {
+    "liverpool": 64, "arsenal": 57, "manchester city": 65, "chelsea": 61,
+    "manchester united": 66, "tottenham": 73, "newcastle": 67,
+    "aston villa": 58, "brighton": 397, "west ham": 563,
+    "real madrid": 86, "barcelona": 81, "atletico madrid": 78,
+    "sevilla": 559, "real betis": 558, "valencia": 95,
+    "inter": 108, "juventus": 109, "ac milan": 98,
+    "napoli": 113, "lazio": 110, "roma": 100,
+    "bayern munich": 5, "borussia dortmund": 4, "bayer leverkusen": 3,
+    "rb leipzig": 721, "vfl wolfsburg": 11,
+    "psg": 524, "marseille": 516, "lyon": 523, "monaco": 548, "nice": 522,
 }
+
+# Common prefixes / suffixes to strip when normalising API team names
+_STRIP_PREFIXES = re.compile(
+    r"^(fc|ac|as|sc|ss|us|cf|vfb|vfl|rb|tsg|ogc|bsc|rc|rsc|sv|sk|fk|afc|fcd)\s+",
+    re.IGNORECASE,
+)
+_STRIP_SUFFIXES = re.compile(
+    r"\s+(fc|cf|sc|ac|fk|sk|if|afc|ssc|calcio|de|1899|1900|1904|1907|1908|1909|1910|1912)$",
+    re.IGNORECASE,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -131,6 +123,112 @@ def _api_get(path: str) -> Optional[Dict]:
 
 
 # ---------------------------------------------------------------------------
+# Dynamic team index
+# ---------------------------------------------------------------------------
+
+def _api_name_to_keys(name: str, short_name: str = "") -> List[str]:
+    """
+    Given an API team name (e.g. "FC Bayern München"), return all normalised
+    keys we want to index it under so fuzzy user queries can match it.
+    """
+    keys = set()
+    base = name.lower().strip()
+    keys.add(base)                                # "fc bayern münchen"
+
+    # strip prefix
+    stripped = _STRIP_PREFIXES.sub("", base).strip()
+    keys.add(stripped)                            # "bayern münchen"
+
+    # strip suffix
+    stripped2 = _STRIP_SUFFIXES.sub("", stripped).strip()
+    keys.add(stripped2)                           # same or shorter
+
+    # also strip suffix from original
+    stripped3 = _STRIP_SUFFIXES.sub("", base).strip()
+    keys.add(stripped3)
+
+    if short_name:
+        keys.add(short_name.lower().strip())      # "Bayern Munich" → "bayern munich"
+
+    # replace special chars: ü→u, é→e, ö→o, á→a, etc.
+    def deaccent(s: str) -> str:
+        return (s.replace("ü", "u").replace("ö", "o").replace("ä", "a")
+                  .replace("é", "e").replace("è", "e").replace("ê", "e")
+                  .replace("á", "a").replace("à", "a").replace("â", "a")
+                  .replace("í", "i").replace("ó", "o").replace("ú", "u")
+                  .replace("ñ", "n").replace("ç", "c"))
+
+    for k in list(keys):
+        keys.add(deaccent(k))
+
+    return [k for k in keys if k]
+
+
+def _build_team_index() -> Dict[str, int]:
+    """
+    Fetch standings for all 5 API leagues and build a comprehensive
+    normalised_name → team_id mapping. Cached for 24 hours.
+    """
+    cached = _cache_get("team_index")
+    if cached:
+        return cached
+
+    index: Dict[str, int] = {}
+
+    for league_name, code in LEAGUE_CODES.items():
+        data = _api_get(f"/competitions/{code}/standings")
+        if not data:
+            continue
+        table = data.get("standings", [{}])[0].get("table", [])
+        for row in table:
+            team = row.get("team", {})
+            team_id = team.get("id")
+            if not team_id:
+                continue
+            full_name = team.get("name", "")
+            short_name = team.get("shortName", "")
+            for key in _api_name_to_keys(full_name, short_name):
+                index[key] = team_id
+
+    if index:
+        _cache_set("team_index", index)
+        logger.info("Team index built: %d entries covering all league teams", len(index))
+    else:
+        logger.warning("Team index is empty — API may be unavailable")
+
+    return index
+
+
+def _resolve_team_id(team_name: str) -> Tuple[Optional[int], str]:
+    """
+    Return (team_id, matched_key) for a user-supplied team name.
+    Tries dynamic index first, then falls back to hardcoded IDs.
+    Returns (None, "") if no match found.
+    """
+    norm = _normalise_team(team_name)
+    query_keys = _api_name_to_keys(norm, norm)
+
+    # 1. Try dynamic index
+    index = _build_team_index()
+    for key in query_keys:
+        if key in index:
+            return index[key], key
+
+    # 2. Substring / partial match against index
+    for key in query_keys:
+        for idx_key, tid in index.items():
+            if key in idx_key or idx_key in key:
+                return tid, idx_key
+
+    # 3. Fallback hardcoded map
+    for key in query_keys:
+        if key in _FALLBACK_IDS:
+            return _FALLBACK_IDS[key], key
+
+    return None, ""
+
+
+# ---------------------------------------------------------------------------
 # Standings
 # ---------------------------------------------------------------------------
 
@@ -144,7 +242,6 @@ def get_standings(league: str) -> Optional[List[Dict]]:
 
     code = LEAGUE_CODES.get(league_norm)
     if not code:
-        # Fuzzy match
         for name, c in LEAGUE_CODES.items():
             if any(word in league_norm for word in name.split()):
                 code = c
@@ -161,7 +258,11 @@ def get_standings(league: str) -> Optional[List[Dict]]:
     if not data:
         return None
 
-    table = data.get("standings", [{}])[0].get("table", [])[:5]
+    full_table = data.get("standings", [{}])[0].get("table", [])
+
+    # Opportunistically populate the team index from the full table
+    _update_team_index_from_table(full_table)
+
     rows = [
         {
             "position": r["position"],
@@ -175,10 +276,30 @@ def get_standings(league: str) -> Optional[List[Dict]]:
             "ga": r["goalsAgainst"],
             "gd": r["goalDifference"],
         }
-        for r in table
+        for r in full_table[:5]
     ]
     _cache_set(cache_key, rows)
     return rows
+
+
+def _update_team_index_from_table(table: List[Dict]) -> None:
+    """Merge new team name→id pairs into the cached team index."""
+    if not table:
+        return
+    cache = _load_cache()
+    entry = cache.get("team_index", {})
+    index: Dict[str, int] = entry.get("data", {}) if isinstance(entry, dict) and "data" in entry else {}
+
+    for row in table:
+        team = row.get("team", {})
+        team_id = team.get("id")
+        if not team_id:
+            continue
+        for key in _api_name_to_keys(team.get("name", ""), team.get("shortName", "")):
+            index[key] = team_id
+
+    cache["team_index"] = {"ts": time.time(), "data": index}
+    _save_cache(cache)
 
 
 def _scrape_greek_standings() -> Optional[List[Dict]]:
@@ -204,13 +325,13 @@ def _scrape_greek_standings() -> Optional[List[Dict]]:
         except Exception as exc:
             logger.warning("Scrape failed for %s: %s", url, exc)
 
-    # Fallback static data
+    # Static fallback
     fallback = [
         {"position": 1, "team": "Olympiacos", "points": 55, "played": 24, "won": 17, "draw": 4, "lost": 3, "gf": 48, "ga": 20, "gd": 28},
-        {"position": 2, "team": "PAOK", "points": 52, "played": 24, "won": 16, "draw": 4, "lost": 4, "gf": 44, "ga": 22, "gd": 22},
+        {"position": 2, "team": "PAOK",       "points": 52, "played": 24, "won": 16, "draw": 4, "lost": 4, "gf": 44, "ga": 22, "gd": 22},
         {"position": 3, "team": "AEK Athens", "points": 48, "played": 24, "won": 14, "draw": 6, "lost": 4, "gf": 40, "ga": 25, "gd": 15},
         {"position": 4, "team": "Panathinaikos", "points": 45, "played": 24, "won": 13, "draw": 6, "lost": 5, "gf": 38, "ga": 27, "gd": 11},
-        {"position": 5, "team": "ARIS", "points": 38, "played": 24, "won": 11, "draw": 5, "lost": 8, "gf": 33, "ga": 32, "gd": 1},
+        {"position": 5, "team": "ARIS",       "points": 38, "played": 24, "won": 11, "draw": 5, "lost": 8, "gf": 33, "ga": 32, "gd": 1},
     ]
     return fallback
 
@@ -249,10 +370,10 @@ def _parse_standings_table(soup: BeautifulSoup) -> List[Dict]:
 # ---------------------------------------------------------------------------
 
 def get_team_matches(team_name: str, limit: int = 10) -> Optional[List[Dict]]:
-    """Return recent matches for a team."""
-    norm = _normalise_team(team_name)
-    team_id = TEAM_IDS.get(norm)
+    """Return recent finished matches for a team."""
+    team_id, _ = _resolve_team_id(team_name)
     if not team_id:
+        logger.warning("Could not resolve team ID for '%s'", team_name)
         return None
 
     cache_key = f"matches_{team_id}_{limit}"
@@ -266,13 +387,11 @@ def get_team_matches(team_name: str, limit: int = 10) -> Optional[List[Dict]]:
 
     matches = []
     for m in data.get("matches", []):
-        home = m["homeTeam"]["name"]
-        away = m["awayTeam"]["name"]
         score = m.get("score", {}).get("fullTime", {})
         matches.append({
             "date": m.get("utcDate", "")[:10],
-            "home_team": home,
-            "away_team": away,
+            "home_team": m["homeTeam"]["name"],
+            "away_team": m["awayTeam"]["name"],
             "home_goals": score.get("home"),
             "away_goals": score.get("away"),
             "competition": m.get("competition", {}).get("name", ""),
@@ -289,26 +408,23 @@ def get_team_stats(team_name: str) -> Optional[Dict]:
         return _fallback_team_stats(team_name)
 
     norm = _normalise_team(team_name)
-    # Find the canonical team name from matches
+    # Find the canonical name this team appears as in the match data
     canonical = None
     for m in matches:
-        if norm in m["home_team"].lower():
+        if _teams_match(norm, m["home_team"]):
             canonical = m["home_team"]
             break
-        if norm in m["away_team"].lower():
+        if _teams_match(norm, m["away_team"]):
             canonical = m["away_team"]
             break
 
     if not canonical:
         return _fallback_team_stats(team_name)
 
-    goals_scored = []
-    goals_conceded = []
-    results = []
+    goals_scored, goals_conceded, results = [], [], []
 
     for m in matches:
-        hg = m["home_goals"]
-        ag = m["away_goals"]
+        hg, ag = m["home_goals"], m["away_goals"]
         if hg is None or ag is None:
             continue
         if m["home_team"] == canonical:
@@ -324,28 +440,21 @@ def get_team_stats(team_name: str) -> Optional[Dict]:
         return _fallback_team_stats(team_name)
 
     played = len(results)
-    won = results.count("W")
-    drawn = results.count("D")
-    lost = results.count("L")
-    avg_scored = round(sum(goals_scored) / played, 2)
-    avg_conceded = round(sum(goals_conceded) / played, 2)
-    form = results[-5:] if len(results) >= 5 else results
-
     return {
         "team": canonical,
         "played": played,
-        "won": won,
-        "drawn": drawn,
-        "lost": lost,
-        "avg_goals_scored": avg_scored,
-        "avg_goals_conceded": avg_conceded,
-        "form": form,
+        "won": results.count("W"),
+        "drawn": results.count("D"),
+        "lost": results.count("L"),
+        "avg_goals_scored": round(sum(goals_scored) / played, 2),
+        "avg_goals_conceded": round(sum(goals_conceded) / played, 2),
+        "form": results[-5:] if len(results) >= 5 else results,
         "recent_matches": matches[:5],
     }
 
 
 def _fallback_team_stats(team_name: str) -> Dict:
-    """Static fallback when API is unavailable."""
+    """Static fallback used when API is unavailable or team not found."""
     STATIC = {
         "liverpool": {"avg_goals_scored": 2.3, "avg_goals_conceded": 0.9, "form": ["W","W","D","W","W"]},
         "arsenal": {"avg_goals_scored": 2.1, "avg_goals_conceded": 1.0, "form": ["W","D","W","W","L"]},
@@ -358,8 +467,7 @@ def _fallback_team_stats(team_name: str) -> Dict:
     base = STATIC.get(norm, {"avg_goals_scored": 1.5, "avg_goals_conceded": 1.3, "form": ["W","D","L","W","D"]})
     return {
         "team": team_name.title(),
-        "played": 10,
-        "won": 5, "drawn": 3, "lost": 2,
+        "played": 10, "won": 5, "drawn": 3, "lost": 2,
         **base,
         "recent_matches": [],
         "_fallback": True,
@@ -382,24 +490,21 @@ def get_head_to_head(team1: str, team2: str) -> Optional[Dict]:
         return None
 
     norm2 = _normalise_team(team2)
-    h2h_matches = [
-        m for m in matches
-        if norm2 in m["home_team"].lower() or norm2 in m["away_team"].lower()
-    ]
+    h2h = [m for m in matches if _teams_match(norm2, m["home_team"]) or _teams_match(norm2, m["away_team"])]
 
-    if not h2h_matches:
+    if not h2h:
         return None
 
     norm1 = _normalise_team(team1)
     t1_wins = t2_wins = draws = 0
-    for m in h2h_matches:
+    for m in h2h:
         hg, ag = m["home_goals"], m["away_goals"]
         if hg is None or ag is None:
             continue
-        t1_is_home = norm1 in m["home_team"].lower()
+        t1_home = _teams_match(norm1, m["home_team"])
         if hg == ag:
             draws += 1
-        elif (t1_is_home and hg > ag) or (not t1_is_home and ag > hg):
+        elif (t1_home and hg > ag) or (not t1_home and ag > hg):
             t1_wins += 1
         else:
             t2_wins += 1
@@ -407,11 +512,11 @@ def get_head_to_head(team1: str, team2: str) -> Optional[Dict]:
     result = {
         "team1": team1.title(),
         "team2": team2.title(),
-        "matches_found": len(h2h_matches),
+        "matches_found": len(h2h),
         "team1_wins": t1_wins,
         "team2_wins": t2_wins,
         "draws": draws,
-        "recent_h2h": h2h_matches[:5],
+        "recent_h2h": h2h[:5],
     }
     _cache_set(cache_key, result)
     return result
@@ -422,48 +527,111 @@ def get_head_to_head(team1: str, team2: str) -> Optional[Dict]:
 # ---------------------------------------------------------------------------
 
 def _normalise_team(name: str) -> str:
-    """Lowercase, strip, resolve common aliases."""
+    """Lowercase, strip, resolve common user-facing aliases."""
     ALIASES = {
         "man city": "manchester city",
         "man united": "manchester united",
         "man utd": "manchester united",
         "paris saint-germain": "psg",
         "paris saint germain": "psg",
+        "paris sg": "psg",
         "inter milan": "inter",
         "internazionale": "inter",
         "atletico": "atletico madrid",
         "atleti": "atletico madrid",
+        "atletico de madrid": "atletico madrid",
         "spurs": "tottenham",
+        "tottenham hotspur": "tottenham",
         "bvb": "borussia dortmund",
         "dortmund": "borussia dortmund",
         "leverkusen": "bayer leverkusen",
-        "bayer leverkusen": "bayer leverkusen",
         "leipzig": "rb leipzig",
         "red bull leipzig": "rb leipzig",
         "milan": "ac milan",
+        "rossoneri": "ac milan",
         "olympiakos": "olympiacos",
         "aek": "aek athens",
         "pao": "panathinaikos",
         "villa": "aston villa",
         "hammers": "west ham",
+        "west ham united": "west ham",
+        "newcastle united": "newcastle",
+        "wolves": "wolverhampton",
+        "wolfsburg": "vfl wolfsburg",
+        "gladbach": "borussia monchengladbach",
+        "monchengladbach": "borussia monchengladbach",
+        "hoffenheim": "tsg hoffenheim",
+        "tsg 1899 hoffenheim": "tsg hoffenheim",
+        "freiburg": "sc freiburg",
+        "eintracht": "eintracht frankfurt",
+        "frankfurt": "eintracht frankfurt",
+        "mainz": "1. fsv mainz 05",
+        "cologne": "1. fc koln",
+        "koln": "1. fc koln",
+        "augsburg": "fc augsburg",
+        "union berlin": "1. fc union berlin",
+        "saint-etienne": "as saint-etienne",
+        "st etienne": "as saint-etienne",
+        "rennes": "stade rennais",
+        "strasbourg": "rc strasbourg",
+        "lens": "rc lens",
+        "lille": "losc lille",
+        "reims": "stade de reims",
+        "nantes": "fc nantes",
+        "bordeaux": "fc girondins de bordeaux",
+        "torino": "torino fc",
+        "fiorentina": "acf fiorentina",
+        "atalanta": "atalanta bc",
+        "bologna": "bologna fc",
+        "udinese": "udinese calcio",
+        "sampdoria": "uc sampdoria",
+        "genoa": "genoa cfc",
+        "cagliari": "cagliari calcio",
+        "celta": "celta de vigo",
+        "celta vigo": "celta de vigo",
+        "athletic": "athletic club",
+        "athletic bilbao": "athletic club",
+        "sociedad": "real sociedad",
+        "real sociedad": "real sociedad",
+        "osasuna": "ca osasuna",
+        "girona": "girona fc",
+        "mallorca": "rcd mallorca",
+        "espanyol": "rcd espanyol",
+        "valladolid": "real valladolid",
+        "villarreal": "villarreal cf",
+        "getafe": "getafe cf",
+        "rayo": "rayo vallecano",
     }
     norm = name.lower().strip()
     return ALIASES.get(norm, norm)
 
 
+def _teams_match(query_norm: str, api_name: str) -> bool:
+    """True if the normalised query matches an API team name."""
+    api_norm = api_name.lower().strip()
+    if query_norm in api_norm or api_norm in query_norm:
+        return True
+    # Try stripped versions
+    api_stripped = _STRIP_PREFIXES.sub("", api_norm).strip()
+    api_stripped = _STRIP_SUFFIXES.sub("", api_stripped).strip()
+    if query_norm in api_stripped or api_stripped in query_norm:
+        return True
+    return False
+
+
 def resolve_league(text: str) -> str:
     """Map free-text league mention to a canonical name."""
-    text_lower = text.lower()
-    if any(w in text_lower for w in ["premier", "epl", "english"]):
+    t = text.lower()
+    if any(w in t for w in ["premier", "epl", "english"]):
         return "Premier League"
-    if any(w in text_lower for w in ["la liga", "laliga", "spain", "pd"]):
+    if any(w in t for w in ["la liga", "laliga", "spain", "pd"]):
         return "La Liga"
-    if any(w in text_lower for w in ["serie a", "italian", "italy"]):
+    if any(w in t for w in ["serie a", "italian", "italy"]):
         return "Serie A"
-    if any(w in text_lower for w in ["bundesliga", "german", "germany"]):
+    if any(w in t for w in ["bundesliga", "german", "germany"]):
         return "Bundesliga"
-    if any(w in text_lower for w in ["ligue 1", "french", "france"]):
+    if any(w in t for w in ["ligue 1", "french", "france"]):
         return "Ligue 1"
-    if any(w in text_lower for w in ["super league", "greek", "greece"]):
+    if any(w in t for w in ["super league", "greek", "greece"]):
         return "Super League"
     return text
