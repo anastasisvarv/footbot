@@ -96,7 +96,9 @@ class ActionPredictMatch(Action):
             )
             return []
 
-        result = pred.predict(home_stats, away_stats, "default")
+        league_slug = home_stats.get("league", "default")
+        computed_avg = repo.get_league_avg_goals(league_slug)
+        result = pred.predict(home_stats, away_stats, league=league_slug, league_avg=computed_avg)
         home_form = pred.format_form(home_stats.get("form", []))
         away_form = pred.format_form(away_stats.get("form", []))
         ht = home_stats["team"]

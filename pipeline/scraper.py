@@ -44,6 +44,20 @@ class FBrefScraper:
     Usage:
         with FBrefScraper() as scraper:
             seasons = scraper.get_seasons(9, "Premier-League")
+
+    NOTE — undetected_chromedriver dependency:
+    FBref serves pages behind Cloudflare's JS challenge, which blocks plain
+    requests and headless browsers.  undetected_chromedriver is the only
+    reliable bypass: it launches a real Chrome instance that Cloudflare cannot
+    distinguish from a human visitor.  This makes the scraper:
+      - Require Google Chrome installed locally
+      - Fragile to Chrome version updates
+      - Incompatible with headless CI environments
+
+    This is a known trade-off.  Alternatives (Playwright stealth, proxy
+    rotation, FBref API) either have the same Cloudflare limitation or require
+    paid access.  The scraper is designed to be run manually
+    (python -m pipeline update), not in CI, so the trade-off is acceptable.
     """
 
     def __init__(self) -> None:

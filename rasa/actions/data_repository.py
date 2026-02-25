@@ -267,13 +267,26 @@ class DataRepository:
     # Public query API
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _weighted_avg(values: List[float], decay: float = 0.85) -> float:
+        """Exponential decay weighted mean. Index 0 = most recent (weight 1.0)."""
+        if not values:
+            return 0.0
+        weights = [decay ** i for i in range(len(values))]
+        total_w = sum(weights)
+        return round(sum(v * w for v, w in zip(values, weights)) / total_w, 2)
+
     def get_team_stats(self, team: str) -> Optional[Dict]:
         """
-        Return aggregated stats for a team based on its last 10 matches.
+        Return aggregated stats for a team based on its last 38 matches (full-season window).
 
-        Return dict keys (compatible with legacy football_data.get_team_stats):
+        Return dict keys:
             team, played, won, drawn, lost,
-            avg_goals_scored, avg_goals_conceded,
+            avg_goals_scored, avg_goals_conceded,        ← exponential decay weighted
+            avg_goals_scored_home, avg_goals_scored_away,
+            avg_goals_conceded_home, avg_goals_conceded_away,
+            home_played, away_played,
+            league  (primary league slug),
             form (list of "W"/"D"/"L", last 5),
             recent_matches (list of match dicts, last 5)
         Returns None if the team is unknown or has no match data.
@@ -283,19 +296,23 @@ class DataRepository:
             logger.warning("Team not found in alias map: '%s'", team)
             return None
 
-        matches = self._get_team_matches(canonical, n=10)
+        matches = self._get_team_matches(canonical, n=38)
         if matches.empty:
             logger.warning("No matches found for '%s' (canonical: %s)", team, canonical)
             return None
 
         name_lower = canonical.lower()
-        goals_scored: List[int] = []
-        goals_conceded: List[int] = []
+        goals_scored: List[float] = []
+        goals_conceded: List[float] = []
+        goals_scored_home: List[float] = []
+        goals_scored_away: List[float] = []
+        goals_conceded_home: List[float] = []
+        goals_conceded_away: List[float] = []
         results: List[str] = []
         recent: List[Dict] = []
+        league_counts: Dict[str, int] = {}
 
         for _, row in matches.iterrows():
-            # Skip rows where goals are null (shouldn't happen after clean, but be safe)
             if pd.isna(row.get("home_goals")) or pd.isna(row.get("away_goals")):
                 continue
             hg = int(row["home_goals"])
@@ -304,33 +321,51 @@ class DataRepository:
             gf = hg if is_home else ag
             ga = ag if is_home else hg
 
-            goals_scored.append(gf)
-            goals_conceded.append(ga)
+            goals_scored.append(float(gf))
+            goals_conceded.append(float(ga))
             results.append("W" if gf > ga else ("D" if gf == ga else "L"))
 
-            date_str = str(row["date"].date()) if pd.notna(row["date"]) else ""
+            if is_home:
+                goals_scored_home.append(float(gf))
+                goals_conceded_home.append(float(ga))
+            else:
+                goals_scored_away.append(float(gf))
+                goals_conceded_away.append(float(ga))
+
             league_slug = row.get("league", "")
+            league_counts[league_slug] = league_counts.get(league_slug, 0) + 1
+
+            date_str = str(row["date"].date()) if pd.notna(row["date"]) else ""
             recent.append({
-                "date":       date_str,
-                "home_team":  row["home_team"],
-                "away_team":  row["away_team"],
-                "home_goals": hg,
-                "away_goals": ag,
+                "date":        date_str,
+                "home_team":   row["home_team"],
+                "away_team":   row["away_team"],
+                "home_goals":  hg,
+                "away_goals":  ag,
                 "competition": self.league_display_name(league_slug),
             })
 
         if not results:
             return None
 
-        n = len(results)
+        n_played = len(results)
+        primary_league = max(league_counts, key=league_counts.get) if league_counts else ""
+
         return {
             "team":               canonical,
-            "played":             n,
+            "played":             n_played,
             "won":                results.count("W"),
             "drawn":              results.count("D"),
             "lost":               results.count("L"),
-            "avg_goals_scored":   round(sum(goals_scored) / n, 2),
-            "avg_goals_conceded": round(sum(goals_conceded) / n, 2),
+            "avg_goals_scored":   self._weighted_avg(goals_scored),
+            "avg_goals_conceded": self._weighted_avg(goals_conceded),
+            "avg_goals_scored_home":   self._weighted_avg(goals_scored_home) if goals_scored_home else None,
+            "avg_goals_scored_away":   self._weighted_avg(goals_scored_away) if goals_scored_away else None,
+            "avg_goals_conceded_home": self._weighted_avg(goals_conceded_home) if goals_conceded_home else None,
+            "avg_goals_conceded_away": self._weighted_avg(goals_conceded_away) if goals_conceded_away else None,
+            "home_played":        len(goals_scored_home),
+            "away_played":        len(goals_scored_away),
+            "league":             primary_league,
             "form":               results[:5],
             "recent_matches":     recent[:5],
         }
@@ -370,6 +405,32 @@ class DataRepository:
                 "gd":       int(r["GD"]),
             })
         return rows
+
+    def get_league_avg_goals(self, slug: str) -> Optional[float]:
+        """
+        Compute goals-per-match for a league from the most recent season's data.
+
+        Uses only the most recent season (most representative of current tempo).
+        Returns None if fewer than 10 completed matches are available so that
+        callers can fall back to LEAGUE_AVG_DEFAULTS.
+        """
+        df = self._matches.get(slug)
+        if df is None or df.empty:
+            return None
+
+        most_recent_season = df["season"].iloc[0]
+        season_df = df[df["season"] == most_recent_season]
+        completed = season_df.dropna(subset=["home_goals", "away_goals"])
+
+        if len(completed) < 10:
+            logger.info(
+                "League '%s': only %d completed matches this season — falling back to default avg",
+                slug, len(completed),
+            )
+            return None
+
+        total_goals = int((completed["home_goals"] + completed["away_goals"]).sum())
+        return round(total_goals / len(completed), 3)
 
     def get_recent_form(self, team: str, n: int = 5) -> List[Dict]:
         """
