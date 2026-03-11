@@ -1,0 +1,69 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - help
+  - predict_match
+  - get_team_stats
+  - compare_teams
+  - get_standings
+  - get_recent_form
+  - get_head_to_head
+  - nlu_fallback
+
+entities:
+  - team
+  - league
+
+slots:
+  home_team:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: team
+        role: home
+  away_team:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: team
+        role: away
+  team_name:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: team
+  league_name:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: league
+
+responses:
+  utter_greet:
+    - text: "⚽ Hey! I'm Footbot, your AI football predictor. Ask me to predict a match, get team stats, compare teams, or check standings!"
+    - text: "👋 Welcome to Footbot! I can predict match outcomes using real football data and Poisson models. What would you like to know?"
+
+  utter_goodbye:
+    - text: "⚽ See you on the pitch! Come back for more predictions anytime."
+    - text: "👋 Goodbye! May your predictions always be right!"
+
+  utter_help:
+    - text: "⚡ Here's what I can do:\n\n🎯 **Predict a match:**\n  predict Liverpool vs Arsenal\n\n📊 **Team stats:**\n  Liverpool stats\n  show Arsenal statistics\n\n⚔️ **Compare teams:**\n  compare Real Madrid vs Barcelona\n\n🏆 **League standings:**\n  show Premier League table\n  La Liga standings\n\n📋 **Recent form:**\n  Liverpool recent form\n  Bayern last 5 matches\n\n🔁 **Head to head:**\n  Liverpool vs Arsenal head to head\n\n🌍 Supported leagues: Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Super League (Greece)"
+
+  utter_default:
+    - text: "🤔 I'm not sure I understood that. Try asking me to predict a match, like:\n  \"predict Liverpool vs Arsenal\"\n  or type **help** to see everything I can do."
+
+actions:
+  - action_predict_match
+  - action_get_team_stats
+  - action_compare_teams
+  - action_get_standings
+  - action_get_recent_form
+  - action_get_head_to_head
+  - action_default_fallback
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

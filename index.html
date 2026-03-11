@@ -13,6 +13,7 @@
             <div class="header-content">
                 <div class="logo">⚽ FOOTBOT</div>
                 <p class="tagline">AI Football Match Predictor</p>
+                <span id="connection-status" class="status-badge status-offline">Offline</span>
             </div>
         </header>
 
@@ -36,56 +37,60 @@
             <aside class="info-panel">
                 <h3>Available Teams</h3>
                 <div class="teams-list">
+                    <p style="color:#b0bec5; font-size:0.85rem;">Teams from all supported leagues — just mention them in your query!</p>
+                </div>
 
                 <h3>Supported Leagues</h3>
                 <div class="leagues-grid">
-                    <div class="league-item">
+                    <div class="league-item" data-query="show Premier League table">
                         <span class="league-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
                         <span class="league-name">Premier League</span>
                         <span class="league-country">England</span>
                     </div>
-                    <div class="league-item">
+                    <div class="league-item" data-query="show La Liga standings">
                         <span class="league-flag">🇪🇸</span>
                         <span class="league-name">La Liga</span>
                         <span class="league-country">Spain</span>
                     </div>
-                    <div class="league-item">
+                    <div class="league-item" data-query="show Serie A standings">
                         <span class="league-flag">🇮🇹</span>
                         <span class="league-name">Serie A</span>
                         <span class="league-country">Italy</span>
                     </div>
-                    <div class="league-item">
+                    <div class="league-item" data-query="show Bundesliga standings">
                         <span class="league-flag">🇩🇪</span>
                         <span class="league-name">Bundesliga</span>
                         <span class="league-country">Germany</span>
                     </div>
-                    <div class="league-item">
+                    <div class="league-item" data-query="show Ligue 1 standings">
                         <span class="league-flag">🇫🇷</span>
                         <span class="league-name">Ligue 1</span>
                         <span class="league-country">France</span>
                     </div>
-                    <div class="league-item">
+                    <div class="league-item" data-query="show Super League Greece standings">
                         <span class="league-flag">🇬🇷</span>
                         <span class="league-name">Super League</span>
                         <span class="league-country">Greece</span>
                     </div>
                 </div>
 
-                <h3>Seasons Available</h3>
+                <h3>Try Asking</h3>
                 <div class="seasons-list">
-                    <span class="season-badge">2023-24</span>
-                    <span class="season-badge">2024-25</span>
-                    <span class="season-badge">2025-26</span>
+                    <span class="season-badge" data-query="predict Liverpool vs Arsenal">Predict a match</span>
+                    <span class="season-badge" data-query="Liverpool stats">Team stats</span>
+                    <span class="season-badge" data-query="compare Real Madrid vs Barcelona">Compare teams</span>
+                    <span class="season-badge" data-query="Liverpool recent form">Recent form</span>
                 </div>
             </aside>
         </main>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Footbot AI ChatbotPredictor © 2026 | Advanced Football Predictor</p>
+            <p>Footbot AI Chatbot Predictor © 2026 | Advanced Football Predictor</p>
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
