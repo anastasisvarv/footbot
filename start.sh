@@ -25,6 +25,13 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     export $(grep -v '^#' "$SCRIPT_DIR/.env" | xargs)
 fi
 
+# ── Update football data ───────────────────────────────────────────────────
+echo "Updating football data (this may take a few minutes)..."
+cd "$SCRIPT_DIR"
+python -m pipeline update > "$LOG_DIR/pipeline.log" 2>&1 || echo "  ⚠️  Data update had errors — check $LOG_DIR/pipeline.log"
+echo "  Data update complete. Log: $LOG_DIR/pipeline.log"
+echo ""
+
 # ── Action server ──────────────────────────────────────────────────────────
 echo "Starting Rasa action server on port 5055..."
 cd "$RASA_DIR"
