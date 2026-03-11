@@ -104,6 +104,18 @@ class ActionPredictMatch(Action):
         ht = home_stats["team"]
         at = away_stats["team"]
 
+        # Confidence: the dominant outcome probability indicates model certainty
+        max_pct = max(result["home_win_pct"], result["draw_pct"], result["away_win_pct"])
+        if max_pct >= 55:
+            confidence_label = "HIGH"
+            confidence_icon  = "🟢"
+        elif max_pct >= 42:
+            confidence_label = "MEDIUM"
+            confidence_icon  = "🟡"
+        else:
+            confidence_label = "LOW"
+            confidence_icon  = "🔴"
+
         msg = (
             f"🎯 **MATCH PREDICTION**\n"
             f"🏠 {ht}  vs  {at} ✈️\n"
@@ -119,7 +131,8 @@ class ActionPredictMatch(Action):
             f"({result['most_likely_prob']}% probability)\n\n"
             f"📋 Recent Form:\n"
             f"  {ht}: {home_form}\n"
-            f"  {at}: {away_form}"
+            f"  {at}: {away_form}\n\n"
+            f"{confidence_icon} Model Confidence: **{confidence_label}** ({max_pct}%)"
         )
         dispatcher.utter_message(text=msg)
         return []

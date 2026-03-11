@@ -8,6 +8,7 @@ class FootbotClient {
         this.statusBadge = document.getElementById('connection-status');
         this.rasaUrl = 'http://localhost:5005/webhooks/rest/webhook';
         this.senderId = this._getSessionId();
+        this._isSending = false;
 
         this.setupEventListeners();
         this.checkConnection();
@@ -72,13 +73,21 @@ class FootbotClient {
         else this.statusBadge.classList.add('status-checking');
     }
 
+    _setInputLocked(locked) {
+        this._isSending = locked;
+        this.sendBtn.disabled = locked;
+        this.inputField.disabled = locked;
+        this.sendBtn.style.opacity = locked ? '0.5' : '1';
+    }
+
     async handleUserMessage() {
+        if (this._isSending) return;
         const message = this.inputField.value.trim();
         if (!message) return;
 
         this.addMessage(message, 'user');
         this.inputField.value = '';
-
+        this._setInputLocked(true);
         this.showTypingIndicator();
 
         try {
@@ -99,6 +108,9 @@ class FootbotClient {
                 "⚠️ Cannot reach the Rasa server.\n\nTo start it, run:\n  ./start.sh\n\nOr manually:\n  cd rasa && rasa run --enable-api --cors \"*\" &\n  rasa run actions &",
                 'bot'
             );
+        } finally {
+            this._setInputLocked(false);
+            this.inputField.focus();
         }
 
         this.scrollToBottom();
@@ -116,17 +128,149 @@ class FootbotClient {
         return resp.json();
     }
 
+    // -----------------------------------------------------------------------
+    // Text rendering helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Render a bot message string as HTML.
+     * Handles:
+     *   **bold**  → <strong>
+     *   \n        → <br>
+     */
+    _renderText(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+    }
+
+    /**
+     * Try to parse win-probability data from a prediction bot message.
+     * Returns { homeLabel, drawLabel, awayLabel, homeVal, drawVal, awayVal }
+     * or null if the message is not a prediction.
+     */
+    _parsePrediction(text) {
+        if (!text.includes('Win Probabilities:')) return null;
+
+        // Extract percentage lines: "  TeamName: **42.3%**"
+        const pctRe = /([^\n:]+):\s*\*?\*?(\d+(?:\.\d+)?)%/g;
+        const matches = [];
+        let m;
+        // Only scan inside the "Win Probabilities" block
+        const block = text.split('Win Probabilities:')[1] || '';
+        const blockEnd = block.indexOf('\n\n');
+        const probBlock = blockEnd >= 0 ? block.substring(0, blockEnd) : block;
+        while ((m = pctRe.exec(probBlock)) !== null) {
+            matches.push({ label: m[1].trim(), value: parseFloat(m[2]) });
+        }
+
+        if (matches.length < 3) return null;
+        return {
+            homeLabel: matches[0].label,
+            drawLabel: matches[1].label,
+            awayLabel: matches[2].label,
+            homeVal:   matches[0].value,
+            drawVal:   matches[1].value,
+            awayVal:   matches[2].value,
+        };
+    }
+
+    // -----------------------------------------------------------------------
+    // Message rendering
+    // -----------------------------------------------------------------------
+
     addMessage(text, type = 'bot') {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${type}-message`;
 
         const paragraph = document.createElement('p');
-        // Render newlines as <br> for multi-line bot responses
-        paragraph.innerHTML = text.replace(/\n/g, '<br>');
+
+        if (type === 'bot') {
+            paragraph.innerHTML = this._renderText(text);
+        } else {
+            // User messages: escape HTML only, no markdown
+            paragraph.textContent = text;
+        }
 
         messageDiv.appendChild(paragraph);
+
+        // For prediction bot messages, append a probability chart
+        if (type === 'bot') {
+            const pred = this._parsePrediction(text);
+            if (pred) {
+                messageDiv.appendChild(this._buildProbChart(pred));
+            }
+        }
+
         this.messagesContainer.appendChild(messageDiv);
         this.scrollToBottom();
+    }
+
+    /**
+     * Build a Chart.js horizontal bar chart showing win probabilities.
+     */
+    _buildProbChart(pred) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'prob-chart-wrapper';
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'prob-chart';
+        canvas.setAttribute('aria-label', 'Win probability chart');
+        wrapper.appendChild(canvas);
+
+        // Defer chart creation so the canvas is in the DOM
+        requestAnimationFrame(() => {
+            new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: [pred.homeLabel, pred.drawLabel, pred.awayLabel],
+                    datasets: [{
+                        data: [pred.homeVal, pred.drawVal, pred.awayVal],
+                        backgroundColor: ['#1565c0', '#546e7a', '#b71c1c'],
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.raw.toFixed(1)}%`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.07)' },
+                            ticks: {
+                                color: '#b0bec5',
+                                callback: v => v + '%',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#e0e0e0',
+                                font: { size: 12, weight: 'bold' },
+                                maxRotation: 0
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        return wrapper;
     }
 
     showTypingIndicator() {

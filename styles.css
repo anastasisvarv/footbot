@@ -352,6 +352,23 @@ body {
     font-weight: 600;
 }
 
+/* Probability Chart (Chart.js) */
+.prob-chart-wrapper {
+    width: 100%;
+    max-width: 380px;
+    height: 110px;
+    margin-top: 0.8rem;
+    background: rgba(10, 14, 39, 0.45);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem 0.4rem;
+    border: 1px solid #2a3f5f;
+}
+
+.prob-chart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {
