@@ -1,0 +1,11 @@
+{
+  "source": "fbref",
+  "league": "Serie A",
+  "season": "2025-2026",
+  "competition_id": 11,
+  "scraped_at": "2026-03-11T17:09:59.055184+00:00",
+  "row_counts": {
+    "matches": 280,
+    "standings": 20
+  }
+}

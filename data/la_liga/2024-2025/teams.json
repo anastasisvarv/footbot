@@ -1,0 +1,90 @@
+{
+  "teams": [
+    {
+      "canonical": "Alavés",
+      "aliases": [
+        "Alaves"
+      ]
+    },
+    {
+      "canonical": "Athletic Club",
+      "aliases": []
+    },
+    {
+      "canonical": "Atlético Madrid",
+      "aliases": [
+        "Atletico Madrid"
+      ]
+    },
+    {
+      "canonical": "Barcelona",
+      "aliases": []
+    },
+    {
+      "canonical": "Celta Vigo",
+      "aliases": []
+    },
+    {
+      "canonical": "Espanyol",
+      "aliases": []
+    },
+    {
+      "canonical": "Getafe",
+      "aliases": []
+    },
+    {
+      "canonical": "Girona",
+      "aliases": []
+    },
+    {
+      "canonical": "Las Palmas",
+      "aliases": []
+    },
+    {
+      "canonical": "Leganés",
+      "aliases": [
+        "Leganes"
+      ]
+    },
+    {
+      "canonical": "Mallorca",
+      "aliases": []
+    },
+    {
+      "canonical": "Osasuna",
+      "aliases": []
+    },
+    {
+      "canonical": "Rayo Vallecano",
+      "aliases": []
+    },
+    {
+      "canonical": "Real Betis",
+      "aliases": []
+    },
+    {
+      "canonical": "Real Madrid",
+      "aliases": []
+    },
+    {
+      "canonical": "Real Sociedad",
+      "aliases": []
+    },
+    {
+      "canonical": "Sevilla",
+      "aliases": []
+    },
+    {
+      "canonical": "Valencia",
+      "aliases": []
+    },
+    {
+      "canonical": "Valladolid",
+      "aliases": []
+    },
+    {
+      "canonical": "Villarreal",
+      "aliases": []
+    }
+  ]
+}

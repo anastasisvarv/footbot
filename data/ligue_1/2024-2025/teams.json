@@ -1,0 +1,82 @@
+{
+  "teams": [
+    {
+      "canonical": "Angers",
+      "aliases": []
+    },
+    {
+      "canonical": "Auxerre",
+      "aliases": []
+    },
+    {
+      "canonical": "Brest",
+      "aliases": []
+    },
+    {
+      "canonical": "Le Havre",
+      "aliases": []
+    },
+    {
+      "canonical": "Lens",
+      "aliases": []
+    },
+    {
+      "canonical": "Lille",
+      "aliases": []
+    },
+    {
+      "canonical": "Lyon",
+      "aliases": []
+    },
+    {
+      "canonical": "Marseille",
+      "aliases": []
+    },
+    {
+      "canonical": "Metz",
+      "aliases": []
+    },
+    {
+      "canonical": "Monaco",
+      "aliases": []
+    },
+    {
+      "canonical": "Montpellier",
+      "aliases": []
+    },
+    {
+      "canonical": "Nantes",
+      "aliases": []
+    },
+    {
+      "canonical": "Nice",
+      "aliases": []
+    },
+    {
+      "canonical": "Paris Saint-Germain",
+      "aliases": []
+    },
+    {
+      "canonical": "Reims",
+      "aliases": []
+    },
+    {
+      "canonical": "Rennes",
+      "aliases": []
+    },
+    {
+      "canonical": "Saint-Étienne",
+      "aliases": [
+        "Saint-Etienne"
+      ]
+    },
+    {
+      "canonical": "Strasbourg",
+      "aliases": []
+    },
+    {
+      "canonical": "Toulouse",
+      "aliases": []
+    }
+  ]
+}

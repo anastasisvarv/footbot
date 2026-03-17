@@ -1,0 +1,84 @@
+{
+  "teams": [
+    {
+      "canonical": "Atalanta",
+      "aliases": []
+    },
+    {
+      "canonical": "Bologna",
+      "aliases": []
+    },
+    {
+      "canonical": "Cagliari",
+      "aliases": []
+    },
+    {
+      "canonical": "Como",
+      "aliases": []
+    },
+    {
+      "canonical": "Cremonese",
+      "aliases": []
+    },
+    {
+      "canonical": "Fiorentina",
+      "aliases": []
+    },
+    {
+      "canonical": "Genoa",
+      "aliases": []
+    },
+    {
+      "canonical": "Hellas Verona",
+      "aliases": []
+    },
+    {
+      "canonical": "Inter",
+      "aliases": []
+    },
+    {
+      "canonical": "Juventus",
+      "aliases": []
+    },
+    {
+      "canonical": "Lazio",
+      "aliases": []
+    },
+    {
+      "canonical": "Lecce",
+      "aliases": []
+    },
+    {
+      "canonical": "Milan",
+      "aliases": []
+    },
+    {
+      "canonical": "Napoli",
+      "aliases": []
+    },
+    {
+      "canonical": "Parma",
+      "aliases": []
+    },
+    {
+      "canonical": "Pisa",
+      "aliases": []
+    },
+    {
+      "canonical": "Roma",
+      "aliases": []
+    },
+    {
+      "canonical": "Sassuolo",
+      "aliases": []
+    },
+    {
+      "canonical": "Torino",
+      "aliases": []
+    },
+    {
+      "canonical": "Udinese",
+      "aliases": []
+    }
+  ]
+}

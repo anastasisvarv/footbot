@@ -1,0 +1,84 @@
+{
+  "teams": [
+    {
+      "canonical": "Arsenal",
+      "aliases": []
+    },
+    {
+      "canonical": "Aston Villa",
+      "aliases": []
+    },
+    {
+      "canonical": "Bournemouth",
+      "aliases": []
+    },
+    {
+      "canonical": "Brentford",
+      "aliases": []
+    },
+    {
+      "canonical": "Brighton",
+      "aliases": []
+    },
+    {
+      "canonical": "Chelsea",
+      "aliases": []
+    },
+    {
+      "canonical": "Crystal Palace",
+      "aliases": []
+    },
+    {
+      "canonical": "Everton",
+      "aliases": []
+    },
+    {
+      "canonical": "Fulham",
+      "aliases": []
+    },
+    {
+      "canonical": "Ipswich Town",
+      "aliases": []
+    },
+    {
+      "canonical": "Leicester City",
+      "aliases": []
+    },
+    {
+      "canonical": "Liverpool",
+      "aliases": []
+    },
+    {
+      "canonical": "Manchester City",
+      "aliases": []
+    },
+    {
+      "canonical": "Manchester Utd",
+      "aliases": []
+    },
+    {
+      "canonical": "Newcastle United",
+      "aliases": []
+    },
+    {
+      "canonical": "Nottingham Forest",
+      "aliases": []
+    },
+    {
+      "canonical": "Southampton",
+      "aliases": []
+    },
+    {
+      "canonical": "Tottenham Hotspur",
+      "aliases": []
+    },
+    {
+      "canonical": "West Ham United",
+      "aliases": []
+    },
+    {
+      "canonical": "Wolves",
+      "aliases": []
+    }
+  ]
+}

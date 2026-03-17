@@ -1,0 +1,11 @@
+{
+  "source": "fbref",
+  "league": "Ligue 1",
+  "season": "2025-2026",
+  "competition_id": 13,
+  "scraped_at": "2026-03-11T17:10:16.647641+00:00",
+  "row_counts": {
+    "matches": 225,
+    "standings": 18
+  }
+}
