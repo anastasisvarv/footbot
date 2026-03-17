@@ -40,21 +40,21 @@ def validate_season(league_slug: str, season: str) -> bool:
     """Validate a single league/season directory. Returns True iff all checks pass."""
     errors: List[str] = []
 
-    # --- matches ---
+    # --- αγώνες ---
     matches = storage.load_matches(league_slug, season)
     if matches is None:
         errors.append("matches.parquet missing")
     else:
         errors.extend(_check_matches(matches))
 
-    # --- standings ---
+    # --- βαθμολογία ---
     standings = storage.load_standings(league_slug, season)
     if standings is None:
         errors.append("standings.parquet missing")
     else:
         errors.extend(_check_standings(standings))
 
-    # --- teams ---
+    # --- ομάδες ---
     if storage.load_teams(league_slug, season) is None:
         errors.append("teams.json missing")
 

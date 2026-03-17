@@ -18,7 +18,7 @@ body {
     height: 100vh;
 }
 
-/* Header */
+/* Κεφαλίδα */
 .header {
     background: linear-gradient(180deg, #1a1f3a 0%, #0f1425 100%);
     color: white;
@@ -53,7 +53,7 @@ body {
     margin-bottom: 0.6rem;
 }
 
-/* Connection Status Badge */
+/* Badge κατάστασης σύνδεσης */
 .status-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
@@ -89,7 +89,7 @@ body {
     border: 1px solid #ffc107;
 }
 
-/* Main Chat Area */
+/* Κύρια περιοχή συνομιλίας */
 .chat-main {
     display: grid;
     grid-template-columns: 1fr 280px;
@@ -102,7 +102,7 @@ body {
     width: 100%;
 }
 
-/* Chat Area */
+/* Περιοχή συνομιλίας */
 .chat-area {
     background: #1a2540;
     border-radius: 12px;
@@ -245,7 +245,7 @@ body {
     transform: scale(0.95);
 }
 
-/* Info Panel */
+/* Πλαίσιο πληροφοριών */
 .info-panel {
     background: #1a2540;
     border-radius: 12px;
@@ -339,7 +339,7 @@ body {
     box-shadow: 0 4px 12px rgba(211, 47, 47, 0.35);
 }
 
-/* Footer */
+/* Υποσέλιδο */
 .footer {
     background: #0a0e27;
     color: #b0bec5;
@@ -352,7 +352,7 @@ body {
     font-weight: 600;
 }
 
-/* Probability Chart (Chart.js) */
+/* Γράφημα πιθανότητας (Chart.js) */
 .prob-chart-wrapper {
     width: 100%;
     max-width: 380px;
@@ -369,7 +369,7 @@ body {
     height: 100% !important;
 }
 
-/* Animations */
+/* Κινούμενα σχέδια */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -403,7 +403,7 @@ body {
     }
 }
 
-/* Scrollbar Styling */
+/* Στυλ scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -422,7 +422,7 @@ body {
     background: #764ba2;
 }
 
-/* Responsive Design */
+/* Responsive σχεδιασμός */
 @media (max-width: 1200px) {
     .chat-main {
         grid-template-columns: 1fr;

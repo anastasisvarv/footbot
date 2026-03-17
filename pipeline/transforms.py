@@ -16,7 +16,7 @@ import pandas as pd
 
 
 # ---------------------------------------------------------------------------
-# DataFrame cleaning
+# Καθαρισμός DataFrame
 # ---------------------------------------------------------------------------
 
 _MATCH_COLS = [
@@ -60,23 +60,23 @@ def clean_matches_df(matches: List[Dict]) -> pd.DataFrame:
 
     df = pd.DataFrame(matches)
 
-    # Ensure all columns exist
+    # Διασφάλιση ύπαρξης όλων των στηλών
     for col in _MATCH_COLS:
         if col not in df.columns:
             df[col] = None
 
-    # Date
+    # Ημερομηνία
     df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.date
 
-    # String fields
+    # Πεδία κειμένου
     df["home_team"] = df["home_team"].astype(str).str.strip()
     df["away_team"] = df["away_team"].astype(str).str.strip()
 
-    # Integer goals (nullable — matches not yet played stay null)
+    # Ακέραια γκολ (nullable — οι αγώνες που δεν έχουν παιχτεί παραμένουν null)
     for col in ("home_goals", "away_goals", "halftime_home_goals", "halftime_away_goals"):
         df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 
-    # Validate: keep only rows with non-negative goals
+    # Επικύρωση: κράτα μόνο γραμμές με μη-αρνητικά γκολ
     valid = (
         df["home_goals"].notna()
         & df["away_goals"].notna()
@@ -85,16 +85,16 @@ def clean_matches_df(matches: List[Dict]) -> pd.DataFrame:
     )
     df = df[valid].copy()
 
-    # Round: keep as nullable string
+    # Αγωνιστική: κράτα ως nullable string
     df["round"] = df["round"].where(
         df["round"].notna() & (df["round"].astype(str).str.strip() != ""),
         other=None,
     )
 
-    # Deduplicate
+    # Αφαίρεση διπλοτύπων
     df = df.drop_duplicates(subset=["date", "home_team", "away_team"])
 
-    # Sort newest first
+    # Ταξινόμηση από πιο πρόσφατο
     df = df.sort_values("date", ascending=False).reset_index(drop=True)
 
     return df[_MATCH_COLS]
@@ -125,7 +125,7 @@ def clean_standings_df(standings: List[Dict]) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Team alias generation
+# Δημιουργία alias ομάδων
 # ---------------------------------------------------------------------------
 
 _PREFIX_RE = re.compile(
@@ -164,23 +164,23 @@ def _generate_aliases(name: str) -> List[str]:
     """Produce common shortened / deaccented variants of a team name."""
     variants: set = {name}
 
-    # Deaccented original
+    # Πρωτότυπο χωρίς τόνους
     da = _deaccent(name)
     variants.add(da)
 
-    # Strip common prefix  (e.g. "FC Bayern München" → "Bayern München")
+    # Αφαίρεση κοινού prefix  (π.χ. "FC Bayern München" → "Bayern München")
     no_prefix = _PREFIX_RE.sub("", name).strip()
     if no_prefix != name:
         variants.add(no_prefix)
         variants.add(_deaccent(no_prefix))
 
-    # Strip common suffix  (e.g. "Bayern München FC" → "Bayern München")
+    # Αφαίρεση κοινού suffix  (π.χ. "Bayern München FC" → "Bayern München")
     no_suffix = _SUFFIX_RE.sub("", no_prefix).strip()
     if no_suffix != no_prefix:
         variants.add(no_suffix)
         variants.add(_deaccent(no_suffix))
 
-    # Also strip suffix from original
+    # Αφαίρεση suffix και από το πρωτότυπο
     no_suffix2 = _SUFFIX_RE.sub("", name).strip()
     if no_suffix2 != name:
         variants.add(no_suffix2)

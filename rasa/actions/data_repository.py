@@ -24,50 +24,50 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Resolve data/ relative to the project root (two levels up from this file: actions/ → rasa/ → footbot/)
+# Επίλυση data/ σχετικά με τη ρίζα project (δύο επίπεδα πάνω από αυτό το αρχείο: actions/ → rasa/ → footbot/)
 _ROOT = Path(__file__).resolve().parents[2]
 _DATA_DIR = _ROOT / "data"
 
 # ---------------------------------------------------------------------------
-# League name → internal slug mapping
+# Αντιστοίχιση ονόματος πρωταθλήματος → εσωτερικό slug
 # ---------------------------------------------------------------------------
 
 _LEAGUE_ALIASES: Dict[str, str] = {
-    # Slug format (already resolved — passed in from actions after first resolve())
+    # Μορφή slug (ήδη επιλυμένη — μεταβιβάζεται από actions μετά την πρώτη resolve())
     "premier_league":                "premier_league",
     "la_liga":                       "la_liga",
     "serie_a":                       "serie_a",
     "bundesliga":                    "bundesliga",
     "ligue_1":                       "ligue_1",
     "super_league_greece":           "super_league_greece",
-    # Premier League
+    # Premier League (Αγγλία)
     "premier league":                "premier_league",
     "english premier league":        "premier_league",
     "epl":                           "premier_league",
     "pl":                            "premier_league",
     "barclays premier league":       "premier_league",
     "england":                       "premier_league",
-    # La Liga
+    # La Liga (Ισπανία)
     "la liga":                       "la_liga",
     "laliga":                        "la_liga",
     "primera division":              "la_liga",
     "spanish league":                "la_liga",
     "spain":                         "la_liga",
-    # Serie A
+    # Serie A (Ιταλία)
     "serie a":                       "serie_a",
     "italian league":                "serie_a",
     "calcio":                        "serie_a",
     "italy":                         "serie_a",
-    # Bundesliga
+    # Bundesliga (Γερμανία)
     "bundesliga":                    "bundesliga",
     "german league":                 "bundesliga",
     "germany":                       "bundesliga",
-    # Ligue 1
+    # Ligue 1 (Γαλλία)
     "ligue 1":                       "ligue_1",
     "ligue1":                        "ligue_1",
     "french league":                 "ligue_1",
     "france":                        "ligue_1",
-    # Super League Greece
+    # Super League Greece (Ελλάδα)
     "super league":                  "super_league_greece",
     "super league greece":           "super_league_greece",
     "greek super league":            "super_league_greece",
@@ -86,7 +86,7 @@ _LEAGUE_DISPLAY: Dict[str, str] = {
 
 
 # ---------------------------------------------------------------------------
-# Repository
+# Repository (αποθετήριο δεδομένων)
 # ---------------------------------------------------------------------------
 
 class DataRepository:
@@ -100,19 +100,19 @@ class DataRepository:
     def __init__(self, data_dir: Optional[Path] = None) -> None:
         self._data_dir: Path = data_dir or _DATA_DIR
 
-        # league_slug → DataFrame (all seasons combined, sorted newest-first)
+        # league_slug → DataFrame (όλες οι σεζόν συνδυασμένες, ταξινόμηση από πιο πρόσφατη)
         self._matches: Dict[str, pd.DataFrame] = {}
 
-        # league_slug → DataFrame (most-recent season's standings only)
+        # league_slug → DataFrame (μόνο βαθμολογία της πιο πρόσφατης σεζόν)
         self._standings: Dict[str, pd.DataFrame] = {}
 
-        # lower-cased alias → canonical team name
+        # alias σε πεζά → canonical όνομα ομάδας
         self._alias_map: Dict[str, str] = {}
 
         self._load_all()
 
     # ------------------------------------------------------------------
-    # Singleton
+    # Singleton (μοναδική παρουσία)
     # ------------------------------------------------------------------
 
     @classmethod
@@ -128,7 +128,7 @@ class DataRepository:
         cls._instance = None
 
     # ------------------------------------------------------------------
-    # Loading
+    # Φόρτωση δεδομένων
     # ------------------------------------------------------------------
 
     def _load_all(self) -> None:
@@ -150,7 +150,7 @@ class DataRepository:
             if not seasons:
                 continue
 
-            # Matches — merge all seasons, newest first
+            # Αγώνες — συγχώνευση όλων των σεζόν, πιο πρόσφατοι πρώτα
             season_frames: List[pd.DataFrame] = []
             for season in seasons:
                 matches_path = league_dir / season / "matches.parquet"
@@ -160,7 +160,7 @@ class DataRepository:
                     df["season"] = season
                     season_frames.append(df)
 
-                # Team aliases — accumulate from all seasons
+                # Aliases ομάδων — συσσώρευση από όλες τις σεζόν
                 teams_path = league_dir / season / "teams.json"
                 if teams_path.exists():
                     self._load_teams_file(teams_path)
@@ -171,7 +171,7 @@ class DataRepository:
                 combined = combined.sort_values("date", ascending=False).reset_index(drop=True)
                 self._matches[slug] = combined
 
-            # Standings — most recent season only
+            # Βαθμολογία — μόνο πιο πρόσφατη σεζόν
             standings_path = league_dir / seasons[0] / "standings.parquet"
             if standings_path.exists():
                 self._standings[slug] = pd.read_parquet(standings_path)
@@ -196,7 +196,7 @@ class DataRepository:
             logger.warning("Could not load teams from %s: %s", path, exc)
 
     # ------------------------------------------------------------------
-    # Name resolution
+    # Επίλυση ονομάτων
     # ------------------------------------------------------------------
 
     def resolve_team(self, name: str) -> Optional[str]:
@@ -207,17 +207,17 @@ class DataRepository:
         """
         key = name.strip().lower()
 
-        # 1. Direct / alias lookup
+        # 1. Άμεση / αναζήτηση alias
         if key in self._alias_map:
             return self._alias_map[key]
 
-        # 2. Fuzzy match (cutoff = 0.6 gives reasonable tolerance)
+        # 2. Fuzzy matching (cutoff = 0.6 δίνει λογική ανοχή)
         candidates = list(self._alias_map.keys())
         close = get_close_matches(key, candidates, n=1, cutoff=0.6)
         if close:
             return self._alias_map[close[0]]
 
-        # 3. Substring fallback
+        # 3. Fallback υποαλφαριθμητικού
         for alias, canonical in self._alias_map.items():
             if key in alias or alias in key:
                 return canonical
@@ -230,10 +230,10 @@ class DataRepository:
         Handles both exact keys (e.g. "ligue 1") and substrings (e.g. "french").
         """
         t = text.strip().lower()
-        # Exact match
+        # Ακριβής αντιστοίχιση
         if t in _LEAGUE_ALIASES:
             return _LEAGUE_ALIASES[t]
-        # Substring match
+        # Αντιστοίχιση υποαλφαριθμητικού
         return next(
             (slug for kw, slug in _LEAGUE_ALIASES.items() if kw in t),
             None,
@@ -243,7 +243,7 @@ class DataRepository:
         return _LEAGUE_DISPLAY.get(slug, slug.replace("_", " ").title())
 
     # ------------------------------------------------------------------
-    # Internal helpers
+    # Εσωτερικές βοηθητικές μέθοδοι
     # ------------------------------------------------------------------
 
     def _get_team_matches(self, canonical: str, n: int = 20) -> pd.DataFrame:
@@ -264,7 +264,7 @@ class DataRepository:
         return combined.head(n)
 
     # ------------------------------------------------------------------
-    # Public query API
+    # Δημόσιο API ερωτημάτων
     # ------------------------------------------------------------------
 
     @staticmethod
@@ -397,7 +397,7 @@ class DataRepository:
                 "points":   int(r["points"]),
                 "played":   int(r["MP"]),
                 "won":      int(r["W"]),
-                "draw":     int(r["D"]),   # legacy key used by actions.py
+                "draw":     int(r["D"]),   # legacy key που χρησιμοποιείται στο actions.py
                 "drawn":    int(r["D"]),
                 "lost":     int(r["L"]),
                 "gf":       int(r["GF"]),

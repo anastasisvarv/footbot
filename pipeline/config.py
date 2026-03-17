@@ -1,18 +1,18 @@
 """League configuration and shared constants for the FBref pipeline."""
 from pathlib import Path
 
-# Project root = parent of this file's directory
+# Ρίζα project = γονικός φάκελος του φακέλου αυτού του αρχείου
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 
 FBREF_BASE = "https://fbref.com"
 
-# How many seasons to keep per league (current + N-1 previous)
+# Πόσες σεζόν να κρατούμε ανά πρωτάθλημα (τρέχουσα + N-1 προηγούμενες)
 SEASONS_TO_FETCH = 3
 
-# Per-league config: fbref_id and fbref_slug must match the FBref URL pattern:
-#   /en/comps/{fbref_id}/{fbref_slug}-Stats   (current season)
-#   /en/comps/{fbref_id}/{season}/{season}-{fbref_slug}-Stats  (previous)
+# Ρύθμιση ανά πρωτάθλημα: fbref_id και fbref_slug πρέπει να ταιριάζουν με το FBref URL pattern:
+#   /en/comps/{fbref_id}/{fbref_slug}-Stats   (τρέχουσα σεζόν)
+#   /en/comps/{fbref_id}/{season}/{season}-{fbref_slug}-Stats  (προηγούμενη)
 LEAGUES: dict = {
     "premier_league": {
         "name": "Premier League",

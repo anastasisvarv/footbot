@@ -6,7 +6,7 @@ class FootbotClient {
         this.inputField = document.getElementById('chatbot-input');
         this.sendBtn = document.getElementById('send-btn');
         this.statusBadge = document.getElementById('connection-status');
-        this.rasaUrl = 'http://localhost:5005/webhooks/rest/webhook';
+        this.rasaUrl = '/webhooks/rest/webhook';
         this.senderId = this._getSessionId();
         this._isSending = false;
 
@@ -17,7 +17,7 @@ class FootbotClient {
     _getSessionId() {
         let id = localStorage.getItem('footbot_session_id');
         if (!id) {
-            id = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            id = 'user_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
             localStorage.setItem('footbot_session_id', id);
         }
         return id;
@@ -29,7 +29,7 @@ class FootbotClient {
             if (e.key === 'Enter') this.handleUserMessage();
         });
 
-        // League click shortcuts
+        // Συντομεύσεις κλικ πρωταθλήματος
         document.querySelectorAll('.league-item[data-query]').forEach(item => {
             item.addEventListener('click', () => {
                 const query = item.dataset.query;
@@ -39,7 +39,7 @@ class FootbotClient {
             });
         });
 
-        // Quick query badges
+        // Badges γρήγορων ερωτημάτων
         document.querySelectorAll('.season-badge[data-query]').forEach(badge => {
             badge.addEventListener('click', () => {
                 const query = badge.dataset.query;
@@ -53,7 +53,7 @@ class FootbotClient {
     async checkConnection() {
         this._setStatus('checking', 'Connecting...');
         try {
-            const resp = await fetch('http://localhost:5005/', { method: 'GET', signal: AbortSignal.timeout(3000) });
+            const resp = await fetch('/health', { method: 'GET', signal: AbortSignal.timeout(3000) });
             if (resp.ok || resp.status === 404) {
                 this._setStatus('connected', 'Live');
             } else {
@@ -129,12 +129,12 @@ class FootbotClient {
     }
 
     // -----------------------------------------------------------------------
-    // Text rendering helpers
+    // Βοηθητικές συναρτήσεις απόδοσης κειμένου
     // -----------------------------------------------------------------------
 
     /**
-     * Render a bot message string as HTML.
-     * Handles:
+     * Αποδίδει ένα string μηνύματος bot ως HTML.
+     * Χειρίζεται:
      *   **bold**  → <strong>
      *   \n        → <br>
      */
@@ -148,18 +148,18 @@ class FootbotClient {
     }
 
     /**
-     * Try to parse win-probability data from a prediction bot message.
-     * Returns { homeLabel, drawLabel, awayLabel, homeVal, drawVal, awayVal }
-     * or null if the message is not a prediction.
+     * Προσπαθεί να αναλύσει δεδομένα πιθανότητας νίκης από μήνυμα bot πρόβλεψης.
+     * Επιστρέφει { homeLabel, drawLabel, awayLabel, homeVal, drawVal, awayVal }
+     * ή null αν το μήνυμα δεν είναι πρόβλεψη.
      */
     _parsePrediction(text) {
         if (!text.includes('Win Probabilities:')) return null;
 
-        // Extract percentage lines: "  TeamName: **42.3%**"
+        // Εξαγωγή γραμμών ποσοστού: "  TeamName: **42.3%**"
         const pctRe = /([^\n:]+):\s*\*?\*?(\d+(?:\.\d+)?)%/g;
         const matches = [];
         let m;
-        // Only scan inside the "Win Probabilities" block
+        // Σάρωση μόνο μέσα στο block "Win Probabilities"
         const block = text.split('Win Probabilities:')[1] || '';
         const blockEnd = block.indexOf('\n\n');
         const probBlock = blockEnd >= 0 ? block.substring(0, blockEnd) : block;
@@ -179,7 +179,7 @@ class FootbotClient {
     }
 
     // -----------------------------------------------------------------------
-    // Message rendering
+    // Απόδοση μηνυμάτων
     // -----------------------------------------------------------------------
 
     addMessage(text, type = 'bot') {
@@ -191,13 +191,13 @@ class FootbotClient {
         if (type === 'bot') {
             paragraph.innerHTML = this._renderText(text);
         } else {
-            // User messages: escape HTML only, no markdown
+            // Μηνύματα χρήστη: μόνο escape HTML, χωρίς markdown
             paragraph.textContent = text;
         }
 
         messageDiv.appendChild(paragraph);
 
-        // For prediction bot messages, append a probability chart
+        // Για μηνύματα πρόβλεψης bot, προσθήκη γραφήματος πιθανότητας
         if (type === 'bot') {
             const pred = this._parsePrediction(text);
             if (pred) {
@@ -210,7 +210,7 @@ class FootbotClient {
     }
 
     /**
-     * Build a Chart.js horizontal bar chart showing win probabilities.
+     * Κατασκευάζει οριζόντιο bar chart Chart.js που δείχνει πιθανότητες νίκης.
      */
     _buildProbChart(pred) {
         const wrapper = document.createElement('div');
@@ -221,7 +221,7 @@ class FootbotClient {
         canvas.setAttribute('aria-label', 'Win probability chart');
         wrapper.appendChild(canvas);
 
-        // Defer chart creation so the canvas is in the DOM
+        // Αναβολή δημιουργίας chart ώστε το canvas να είναι στο DOM
         requestAnimationFrame(() => {
             new Chart(canvas, {
                 type: 'bar',

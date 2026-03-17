@@ -25,11 +25,11 @@ from .config import FBREF_BASE, SEASONS_TO_FETCH
 
 logger = logging.getLogger(__name__)
 
-REQUEST_DELAY   = 1.0   # seconds between page loads (mandatory)
-CF_WAIT_TIMEOUT = 20.0  # seconds to wait for Cloudflare challenge to clear
-CF_POLL         = 0.5   # polling interval while waiting
+REQUEST_DELAY   = 1.0   # δευτερόλεπτα μεταξύ φορτώσεων σελίδας (υποχρεωτικό)
+CF_WAIT_TIMEOUT = 20.0  # δευτερόλεπτα αναμονής για επίλυση Cloudflare challenge
+CF_POLL         = 0.5   # διάστημα polling κατά την αναμονή
 
-# Cloudflare challenge page titles (may be localised)
+# Τίτλοι σελίδας Cloudflare challenge (μπορεί να είναι τοπικοποιημένοι)
 _CF_TITLES = {"just a moment...", "περιμένετε...", "einen moment..."}
 
 
@@ -64,7 +64,7 @@ class FBrefScraper:
         self._driver: Optional[uc.Chrome] = None
 
     # ------------------------------------------------------------------
-    # Context manager / lifecycle
+    # Context manager / κύκλος ζωής
     # ------------------------------------------------------------------
 
     def __enter__(self) -> "FBrefScraper":
@@ -82,7 +82,7 @@ class FBrefScraper:
             self._driver = None
 
     # ------------------------------------------------------------------
-    # Browser management
+    # Διαχείριση browser
     # ------------------------------------------------------------------
 
     def _ensure_driver(self) -> uc.Chrome:
@@ -95,7 +95,7 @@ class FBrefScraper:
         return self._driver
 
     # ------------------------------------------------------------------
-    # HTTP (via real browser)
+    # HTTP (μέσω πραγματικού browser)
     # ------------------------------------------------------------------
 
     def _get(self, url: str) -> str:
@@ -107,7 +107,7 @@ class FBrefScraper:
         logger.debug("Navigating to %s", url)
         driver.get(url)
 
-        # Wait for Cloudflare challenge page to clear
+        # Αναμονή για εκκαθάριση σελίδας Cloudflare challenge
         waited = 0.0
         while waited < CF_WAIT_TIMEOUT:
             title = driver.title.strip().lower()
@@ -121,11 +121,11 @@ class FBrefScraper:
                 f"Cloudflare challenge did not resolve after {CF_WAIT_TIMEOUT}s for {url}"
             )
 
-        time.sleep(REQUEST_DELAY)   # mandatory delay after every successful load
+        time.sleep(REQUEST_DELAY)   # υποχρεωτική καθυστέρηση μετά από κάθε επιτυχή φόρτωση
         return driver.page_source
 
     # ------------------------------------------------------------------
-    # HTML helpers
+    # Βοηθητικές συναρτήσεις HTML
     # ------------------------------------------------------------------
 
     @staticmethod
@@ -145,7 +145,7 @@ class FBrefScraper:
         return tables
 
     # ------------------------------------------------------------------
-    # Season discovery
+    # Ανακάλυψη σεζόν
     # ------------------------------------------------------------------
 
     def get_seasons(
@@ -169,7 +169,7 @@ class FBrefScraper:
 
         seasons: List[Dict] = []
 
-        # Current season lives at the base URL
+        # Η τρέχουσα σεζόν βρίσκεται στο base URL
         current = self._detect_season(soup)
         seasons.append({
             "season": current,
@@ -180,7 +180,7 @@ class FBrefScraper:
             ),
         })
 
-        # Previous seasons: href pattern /en/comps/{id}/YYYY-YYYY/YYYY-YYYY-{slug}-Stats
+        # Προηγούμενες σεζόν: href pattern /en/comps/{id}/YYYY-YYYY/YYYY-YYYY-{slug}-Stats
         pat = re.compile(
             rf"/en/comps/{league_id}/(\d{{4}}-\d{{4}})/\1-{re.escape(league_slug)}-Stats"
         )
@@ -221,7 +221,7 @@ class FBrefScraper:
         return "current"
 
     # ------------------------------------------------------------------
-    # Standings
+    # Βαθμολογία
     # ------------------------------------------------------------------
 
     def get_standings(self, stats_url: str) -> List[Dict]:
@@ -248,7 +248,7 @@ class FBrefScraper:
             return []
         header_stats = {th.get("data-stat", "") for th in thead.find_all("th")}
 
-        # FBref standings use "team" (not "squad") and "ties" (not "draws")
+        # Η βαθμολογία FBref χρησιμοποιεί "team" (όχι "squad") και "ties" (όχι "draws")
         has_team_col = bool({"team", "squad"} & header_stats)
         has_wdl_cols = bool(
             {"wins", "ties", "losses"} <= header_stats       # FBref standard
@@ -274,7 +274,7 @@ class FBrefScraper:
                 if stat:
                     data[stat] = cell.get_text(strip=True)
 
-            # "team" on standings pages; "squad" on some squad-level pages
+            # "team" στις σελίδες βαθμολογίας· "squad" σε μερικές σελίδες squad-level
             team = data.get("team", data.get("squad", "")).strip()
             if not team:
                 continue
@@ -290,7 +290,7 @@ class FBrefScraper:
                 "team":   team,
                 "MP":     _int("games", "mp"),
                 "W":      _int("wins"),
-                "D":      _int("ties", "draws"),    # FBref uses "ties" for draws
+                "D":      _int("ties", "draws"),    # FBref χρησιμοποιεί "ties" για ισοπαλίες
                 "L":      _int("losses"),
                 "GF":     _int("goals_for"),
                 "GA":     _int("goals_against"),
@@ -301,7 +301,7 @@ class FBrefScraper:
         return rows
 
     # ------------------------------------------------------------------
-    # Fixtures / Schedule
+    # Αγώνες / Πρόγραμμα
     # ------------------------------------------------------------------
 
     def get_matches(self, fixtures_url: str) -> List[Dict]:
@@ -353,13 +353,13 @@ class FBrefScraper:
                 if stat:
                     data[stat] = cell.get_text(strip=True)
 
-            # Score — FBref uses en-dash (–); also accept hyphen or colon
+            # Αποτέλεσμα — FBref χρησιμοποιεί en-dash (–)· αποδέχεται επίσης παύλα ή άνω-κάτω τελεία
             score_raw = data.get("score", "").strip()
             if not score_raw:
                 continue
             sm = re.match(r"(\d+)\s*[–\-:]\s*(\d+)", score_raw)
             if not sm:
-                continue   # unplayed / postponed
+                continue   # αδιεξαγμένος / αναβληθείς
 
             home_goals = int(sm.group(1))
             away_goals = int(sm.group(2))
