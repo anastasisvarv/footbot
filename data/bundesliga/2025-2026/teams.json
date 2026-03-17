@@ -1,0 +1,80 @@
+{
+  "teams": [
+    {
+      "canonical": "Augsburg",
+      "aliases": []
+    },
+    {
+      "canonical": "Bayern Munich",
+      "aliases": []
+    },
+    {
+      "canonical": "Dortmund",
+      "aliases": []
+    },
+    {
+      "canonical": "Eintracht Frankfurt",
+      "aliases": []
+    },
+    {
+      "canonical": "Freiburg",
+      "aliases": []
+    },
+    {
+      "canonical": "Gladbach",
+      "aliases": []
+    },
+    {
+      "canonical": "Hamburger SV",
+      "aliases": []
+    },
+    {
+      "canonical": "Heidenheim",
+      "aliases": []
+    },
+    {
+      "canonical": "Hoffenheim",
+      "aliases": []
+    },
+    {
+      "canonical": "Köln",
+      "aliases": [
+        "Koln"
+      ]
+    },
+    {
+      "canonical": "Leverkusen",
+      "aliases": []
+    },
+    {
+      "canonical": "Mainz 05",
+      "aliases": []
+    },
+    {
+      "canonical": "RB Leipzig",
+      "aliases": [
+        "Leipzig"
+      ]
+    },
+    {
+      "canonical": "St Pauli",
+      "aliases": []
+    },
+    {
+      "canonical": "Stuttgart",
+      "aliases": []
+    },
+    {
+      "canonical": "Union Berlin",
+      "aliases": []
+    },
+    {
+      "canonical": "Werder Bremen",
+      "aliases": []
+    },
+    {
+      "canonical": "Wolfsburg",
+      "aliases": []
+    }
+  ]
+}

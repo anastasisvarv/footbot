@@ -1,0 +1,11 @@
+{
+  "source": "fbref",
+  "league": "Premier League",
+  "season": "2025-2026",
+  "competition_id": 9,
+  "scraped_at": "2026-03-11T17:09:41.659686+00:00",
+  "row_counts": {
+    "matches": 291,
+    "standings": 20
+  }
+}

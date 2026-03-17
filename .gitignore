@@ -1,1 +1,15 @@
 .DS_Store
+
+# Python virtual environment
+venv/
+
+# Runtime logs
+logs/
+
+# Rasa cache and trained models
+.rasa/
+rasa/.rasa/
+rasa/models/
+
+# Environment variables
+.env

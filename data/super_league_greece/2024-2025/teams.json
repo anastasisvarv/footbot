@@ -1,0 +1,60 @@
+{
+  "teams": [
+    {
+      "canonical": "AEK Athens",
+      "aliases": []
+    },
+    {
+      "canonical": "Aris",
+      "aliases": []
+    },
+    {
+      "canonical": "Asteras Tripoli",
+      "aliases": []
+    },
+    {
+      "canonical": "Atromitos",
+      "aliases": []
+    },
+    {
+      "canonical": "Kallithea",
+      "aliases": []
+    },
+    {
+      "canonical": "Levadiakos",
+      "aliases": []
+    },
+    {
+      "canonical": "OFI Crete",
+      "aliases": []
+    },
+    {
+      "canonical": "Olympiacos",
+      "aliases": []
+    },
+    {
+      "canonical": "PAOK",
+      "aliases": []
+    },
+    {
+      "canonical": "PAS Lamia",
+      "aliases": []
+    },
+    {
+      "canonical": "Panathinaikos",
+      "aliases": []
+    },
+    {
+      "canonical": "Panetolikos",
+      "aliases": []
+    },
+    {
+      "canonical": "Panserraikos",
+      "aliases": []
+    },
+    {
+      "canonical": "Volos N.F.C.",
+      "aliases": []
+    }
+  ]
+}
