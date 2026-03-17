@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# Footbot — public demo launcher (ngrok)
+# Footbot — εκκινητής δημόσιας επίδειξης (ngrok)
 #
-# Starts all servers and creates a public ngrok URL you can
-# share with anyone.  They just open the URL in a browser.
+# Εκκινεί όλους τους servers και δημιουργεί δημόσιο ngrok URL
+# που μπορείς να μοιραστείς. Ανοίγουν απλά το URL σε browser.
 #
-# Prerequisites:
+# Προαπαιτούμενα:
 #   brew install ngrok
-#   ngrok config add-authtoken <your_token>   # one-time setup
+#   ngrok config add-authtoken <your_token>   # εγκατάσταση μία φορά
 #
-# Usage:
+# Χρήση:
 #   chmod +x ngrok_start.sh
 #   ./ngrok_start.sh
 # ============================================================
@@ -21,7 +21,7 @@ LOG_DIR="$SCRIPT_DIR/logs"
 
 mkdir -p "$LOG_DIR"
 
-# ── Activate venv ──────────────────────────────────────────
+# ── Ενεργοποίηση venv ─────────────────────────────────────
 source "$SCRIPT_DIR/venv/bin/activate"
 
 echo "🤖 Starting Footbot for public demo..."
@@ -33,7 +33,7 @@ cd "$SCRIPT_DIR/rasa"
 rasa run actions --port 5055 > "$LOG_DIR/actions.log" 2>&1 &
 ACTION_PID=$!
 
-sleep 4   # give action server time to load data
+sleep 4   # αναμονή για φόρτωση δεδομένων από action server
 
 # ── Rasa server ────────────────────────────────────────────
 echo "[2/4] Starting Rasa NLU server (port 5005)..."
@@ -43,7 +43,7 @@ rasa run --enable-api --cors "*" --port 5005 \
     > "$LOG_DIR/rasa.log" 2>&1 &
 RASA_PID=$!
 
-sleep 6   # give Rasa time to load the model (~5-10s)
+sleep 6   # αναμονή για φόρτωση μοντέλου Rasa (~5-10s)
 
 # ── Proxy server ───────────────────────────────────────────
 echo "[3/4] Starting proxy server (port 8080)..."
@@ -58,9 +58,9 @@ echo "[4/4] Starting ngrok tunnel..."
 ngrok http 8080 > "$LOG_DIR/ngrok.log" 2>&1 &
 NGROK_PID=$!
 
-sleep 4   # wait for ngrok to establish tunnel
+sleep 4   # αναμονή για δημιουργία tunnel ngrok
 
-# ── Get public URL from ngrok API ─────────────────────────
+# ── Λήψη δημόσιου URL από ngrok API ─────────────────────
 NGROK_URL=$(
     curl -s http://localhost:4040/api/tunnels 2>/dev/null \
     | python3 -c "
@@ -74,10 +74,10 @@ except Exception:
 "
 )
 
-# ── Save PIDs ─────────────────────────────────────────────
+# ── Αποθήκευση PIDs ───────────────────────────────────────
 echo "$ACTION_PID $RASA_PID $SERVER_PID $NGROK_PID" > "$LOG_DIR/footbot.pids"
 
-# ── Done ──────────────────────────────────────────────────
+# ── Έτοιμο ────────────────────────────────────────────────
 echo ""
 echo "=============================================="
 echo "  ✅  Footbot is LIVE!"

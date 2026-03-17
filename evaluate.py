@@ -49,7 +49,7 @@ from rasa.actions.predictor import LEAGUE_AVG_DEFAULTS, predict
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Βοηθητικές συναρτήσεις
 # ---------------------------------------------------------------------------
 
 def _weighted_avg(values: List[float], decay: float = 0.85) -> float:
@@ -119,7 +119,7 @@ def _team_stats_before(
 
 
 # ---------------------------------------------------------------------------
-# Metric functions
+# Συναρτήσεις μετρικών
 # ---------------------------------------------------------------------------
 
 def brier_score(p_h: float, p_d: float, p_a: float, outcome: str) -> float:
@@ -152,7 +152,7 @@ def rps(p_h: float, p_d: float, p_a: float, outcome: str) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Per-league backtesting
+# Backtesting ανά πρωτάθλημα
 # ---------------------------------------------------------------------------
 
 def evaluate_league(
@@ -184,7 +184,7 @@ def evaluate_league(
     if not seasons:
         return []
 
-    # Load all seasons
+    # Φόρτωση όλων των σεζόν
     frames: List[pd.DataFrame] = []
     for season in seasons:
         mp = league_dir / season / "matches.parquet"
@@ -201,7 +201,7 @@ def evaluate_league(
     all_matches["date"] = pd.to_datetime(all_matches["date"], errors="coerce")
     all_matches = all_matches.dropna(subset=["date"])
 
-    # Test set: most recent season, completed matches only
+    # Test set: πιο πρόσφατη σεζόν, μόνο ολοκληρωμένοι αγώνες
     test_season = seasons[0]
     test_df = (
         all_matches[
@@ -220,7 +220,7 @@ def evaluate_league(
         )
         return []
 
-    # League average from prior seasons (avoids test-set leakage)
+    # Μέσος όρος πρωταθλήματος από προηγούμενες σεζόν (αποφεύγει data leakage στο test set)
     prior_completed = all_matches[
         (all_matches["season"] != test_season)
         & all_matches["home_goals"].notna()
@@ -246,7 +246,7 @@ def evaluate_league(
         hg = int(match["home_goals"])
         ag = int(match["away_goals"])
 
-        # Actual 1X2 outcome
+        # Πραγματικό αποτέλεσμα 1X2
         if hg > ag:
             actual = "H"
         elif hg == ag:
@@ -254,7 +254,7 @@ def evaluate_league(
         else:
             actual = "A"
 
-        # Compute stats using strictly prior data
+        # Υπολογισμός στατιστικών με αυστηρά προηγούμενα δεδομένα
         home_stats = _team_stats_before(
             all_matches, home_team, match_date, min_n=min_prior_matches
         )
@@ -306,7 +306,7 @@ def evaluate_league(
 
 
 # ---------------------------------------------------------------------------
-# Baseline metrics
+# Baseline μετρικές
 # ---------------------------------------------------------------------------
 
 def baseline_metrics(results: List[Dict]) -> Dict:
@@ -344,7 +344,7 @@ def baseline_metrics(results: List[Dict]) -> Dict:
 
 
 # ---------------------------------------------------------------------------
-# Reporting
+# Αναφορά αποτελεσμάτων
 # ---------------------------------------------------------------------------
 
 def _pct(x: float) -> str:
@@ -363,7 +363,7 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
     avg_brier  = sum(r["brier"] for r in all_results) / n
     avg_rps    = sum(r["rps"] for r in all_results) / n
 
-    # Per-league breakdown
+    # Ανάλυση ανά πρωτάθλημα
     leagues_seen = sorted({r["league"] for r in all_results})
     per_league: Dict[str, Dict] = {}
     for league in leagues_seen:
@@ -385,7 +385,7 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
     print(f"  Leagues          : {', '.join(leagues_seen)}")
     print()
 
-    # Overall results
+    # Συνολικά αποτελέσματα
     print(f"  {'METRIC':<22} {'POISSON':>10}  {'HOME-BIAS':>10}  {'UNIFORM':>10}  {'HIST-FREQ':>10}")
     print("  " + "-" * (W - 2))
     for metric, label in [("accuracy", "Accuracy (1X2)"), ("brier", "Brier Score ↓"), ("rps", "RPS ↓")]:
@@ -397,7 +397,7 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
     print()
     print(f"  Outcome distribution  H:{_pct(baselines['h_freq'])}  D:{_pct(baselines['d_freq'])}  A:{_pct(baselines['a_freq'])}")
 
-    # Per-league table
+    # Πίνακας ανά πρωτάθλημα
     print()
     print(f"  {'LEAGUE':<28} {'N':>5}  {'ACCURACY':>9}  {'BRIER':>7}  {'RPS':>7}")
     print("  " + "-" * (W - 2))
@@ -407,7 +407,7 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
             f"{m['brier']:>7.4f}  {m['rps']:>7.4f}"
         )
 
-    # Interpretation guide
+    # Οδηγός ερμηνείας
     print()
     print("  INTERPRETATION")
     print("  " + "-" * (W - 2))
@@ -421,7 +421,7 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Entry point
+# Σημείο εισόδου
 # ---------------------------------------------------------------------------
 
 def main() -> None:

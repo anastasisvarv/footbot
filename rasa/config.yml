@@ -14,8 +14,8 @@ pipeline:
   - name: DIETClassifier
     epochs: 100
     constrain_similarities: true
-  # EntitySynonymMapper omitted — it conflicts with role-annotated entities (home/away)
-  # Team alias resolution is handled in football_data.py _normalise_team()
+  # EntitySynonymMapper παραλείφθηκε — συγκρούεται με entities με ρόλους (home/away)
+  # Η επίλυση alias ομάδων γίνεται στο football_data.py _normalise_team()
   - name: ResponseSelector
     epochs: 100
     constrain_similarities: true

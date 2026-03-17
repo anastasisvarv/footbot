@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Shared helpers
+# Κοινές βοηθητικές συναρτήσεις
 # ---------------------------------------------------------------------------
 
 def _repo() -> DataRepository:
@@ -40,7 +40,7 @@ def _get_teams(tracker: Tracker):
     away = _get_entity(tracker, "team", "away")
     if home and away:
         return home, away
-    # Fallback: positional order
+    # Fallback: σειρά θέσης
     teams = [
         e["value"]
         for e in tracker.latest_message.get("entities", [])
@@ -63,7 +63,7 @@ _NO_DATA_HINT = "\nRun `python -m pipeline update` to refresh local data."
 
 
 # ---------------------------------------------------------------------------
-# Action: predict_match
+# Action: predict_match (πρόβλεψη αγώνα)
 # ---------------------------------------------------------------------------
 
 class ActionPredictMatch(Action):
@@ -104,7 +104,7 @@ class ActionPredictMatch(Action):
         ht = home_stats["team"]
         at = away_stats["team"]
 
-        # Confidence: the dominant outcome probability indicates model certainty
+        # Εμπιστοσύνη: η κυρίαρχη πιθανότητα αποτελέσματος υποδηλώνει βεβαιότητα μοντέλου
         max_pct = max(result["home_win_pct"], result["draw_pct"], result["away_win_pct"])
         if max_pct >= 55:
             confidence_label = "HIGH"
@@ -139,7 +139,7 @@ class ActionPredictMatch(Action):
 
 
 # ---------------------------------------------------------------------------
-# Action: get_team_stats
+# Action: get_team_stats (στατιστικά ομάδας)
 # ---------------------------------------------------------------------------
 
 class ActionGetTeamStats(Action):
@@ -187,7 +187,7 @@ class ActionGetTeamStats(Action):
 
 
 # ---------------------------------------------------------------------------
-# Action: compare_teams
+# Action: compare_teams (σύγκριση ομάδων)
 # ---------------------------------------------------------------------------
 
 class ActionCompareTeams(Action):
@@ -247,7 +247,7 @@ class ActionCompareTeams(Action):
 
 
 # ---------------------------------------------------------------------------
-# Action: get_standings
+# Action: get_standings (βαθμολογία)
 # ---------------------------------------------------------------------------
 
 class ActionGetStandings(Action):
@@ -265,7 +265,7 @@ class ActionGetStandings(Action):
         league_raw = _get_league(tracker)
 
         if not league_raw:
-            # Try to infer from the raw message text
+            # Προσπάθεια συμπερασμού από το κείμενο μηνύματος
             league_raw = tracker.latest_message.get("text", "")
 
         league_slug = repo.resolve_league(league_raw)
@@ -305,7 +305,7 @@ class ActionGetStandings(Action):
 
 
 # ---------------------------------------------------------------------------
-# Action: get_recent_form
+# Action: get_recent_form (πρόσφατη φόρμα)
 # ---------------------------------------------------------------------------
 
 class ActionGetRecentForm(Action):
@@ -379,7 +379,7 @@ class ActionGetRecentForm(Action):
 
 
 # ---------------------------------------------------------------------------
-# Action: get_head_to_head
+# Action: get_head_to_head (head to head)
 # ---------------------------------------------------------------------------
 
 class ActionGetHeadToHead(Action):

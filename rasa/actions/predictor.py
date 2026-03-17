@@ -7,7 +7,7 @@ average goals scored/conceded vs the league average.
 from typing import Dict, Optional, Tuple
 import math
 
-# Try scipy first; fall back to pure-Python Poisson PMF if not installed
+# Δοκιμή scipy πρώτα· fallback σε pure-Python Poisson PMF αν δεν είναι εγκατεστημένο
 try:
     from scipy.stats import poisson as _scipy_poisson
 
@@ -22,7 +22,7 @@ except ImportError:
         return math.exp(-lam) * (lam ** k) / math.factorial(k)
 
 
-# Default league averages (goals per match) used when real data unavailable
+# Προεπιλεγμένοι μέσοι όροι πρωταθλήματος (γκολ ανά αγώνα) όταν δεν υπάρχουν πραγματικά δεδομένα
 LEAGUE_AVG_DEFAULTS: Dict[str, float] = {
     "premier league": 2.65,
     "la liga": 2.55,
@@ -33,8 +33,8 @@ LEAGUE_AVG_DEFAULTS: Dict[str, float] = {
     "default": 2.65,
 }
 
-MAX_GOALS = 7          # grid size: 0..MAX_GOALS for each team
-HOME_ADVANTAGE = 1.20  # standard home advantage multiplier
+MAX_GOALS = 7          # μέγεθος πλέγματος: 0..MAX_GOALS για κάθε ομάδα
+HOME_ADVANTAGE = 1.20  # τυπικός πολλαπλασιαστής πλεονεκτήματος έδρας
 
 
 def predict(
@@ -64,9 +64,9 @@ def predict(
     if league_avg is None:
         league_avg = LEAGUE_AVG_DEFAULTS.get(league.lower(), LEAGUE_AVG_DEFAULTS["default"])
 
-    # Use venue-specific stats when all four split keys are present.
-    # The HOME_ADVANTAGE multiplier is NOT applied in this path — the venue
-    # effect is already embedded in the home/away split averages.
+    # Χρήση στατιστικών ανά έδρα όταν υπάρχουν και τα τέσσερα split keys.
+    # Ο πολλαπλασιαστής HOME_ADVANTAGE ΔΕΝ εφαρμόζεται εδώ — το venue effect
+    # είναι ήδη ενσωματωμένο στους μέσους όρους home/away split.
     _has_splits = (
         home_stats.get("avg_goals_scored_home") is not None
         and home_stats.get("avg_goals_conceded_home") is not None
@@ -86,7 +86,7 @@ def predict(
             * league_avg
         )
     else:
-        # Fallback: overall averages + HOME_ADVANTAGE multiplier
+        # Fallback: συνολικοί μέσοι όροι + πολλαπλασιαστής HOME_ADVANTAGE
         home_attack  = home_stats["avg_goals_scored"]  / league_avg
         home_defense = home_stats["avg_goals_conceded"] / league_avg
         away_attack  = away_stats["avg_goals_scored"]  / league_avg
@@ -94,11 +94,11 @@ def predict(
         home_xg = home_attack * away_defense * league_avg * HOME_ADVANTAGE
         away_xg = away_attack * home_defense * league_avg
 
-    # Clamp to reasonable range
+    # Περιορισμός σε λογικό εύρος
     home_xg = max(0.1, min(home_xg, 8.0))
     away_xg  = max(0.1, min(away_xg, 8.0))
 
-    # Build probability grid
+    # Κατασκευή πλέγματος πιθανοτήτων
     grid: Dict[Tuple[int, int], float] = {}
     for hg in range(MAX_GOALS + 1):
         for ag in range(MAX_GOALS + 1):
@@ -108,7 +108,7 @@ def predict(
     draw_pct     = sum(p for (hg, ag), p in grid.items() if hg == ag)
     away_win_pct = sum(p for (hg, ag), p in grid.items() if hg < ag)
 
-    # Most likely scoreline
+    # Πιο πιθανό αποτέλεσμα
     most_likely_score = max(grid, key=grid.get)
 
     return {

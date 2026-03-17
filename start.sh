@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Footbot startup script
-# Starts the Rasa action server and Rasa server in the background.
+# Σκριπτ εκκίνησης Footbot
+# Εκκινεί τον Rasa action server και τον Rasa server στο παρασκήνιο.
 #
-# Prerequisites:
-#   1. Python 3.10 venv activated (pyenv local 3.10.14)
+# Προαπαιτούμενα:
+#   1. Python 3.10 venv ενεργοποιημένο (pyenv local 3.10.14)
 #   2. pip install -r requirements.txt
-#   3. cd rasa && rasa train (first time / after data changes)
+#   3. cd rasa && rasa train (πρώτη φορά / μετά από αλλαγές δεδομένων)
 #
-# Usage:
+# Χρήση:
 #   chmod +x start.sh
 #   ./start.sh
 
@@ -19,13 +19,13 @@ LOG_DIR="$SCRIPT_DIR/logs"
 
 mkdir -p "$LOG_DIR"
 
-# Load .env if present
+# Φόρτωση .env αν υπάρχει
 if [ -f "$SCRIPT_DIR/.env" ]; then
     echo "Loading .env..."
     export $(grep -v '^#' "$SCRIPT_DIR/.env" | xargs)
 fi
 
-# ── Update football data ───────────────────────────────────────────────────
+# ── Ενημέρωση δεδομένων ποδοσφαίρου ──────────────────────────────────────
 echo "Updating football data (this may take a few minutes)..."
 cd "$SCRIPT_DIR"
 python -m pipeline update > "$LOG_DIR/pipeline.log" 2>&1 || echo "  ⚠️  Data update had errors — check $LOG_DIR/pipeline.log"
@@ -33,7 +33,7 @@ echo "  Data update complete. Log: $LOG_DIR/pipeline.log"
 echo ""
 
 # ── Action server ──────────────────────────────────────────────────────────
-echo "Starting Rasa action server on port 5055..."
+echo "Εκκίνηση Rasa action server στη θύρα 5055..."
 cd "$RASA_DIR"
 rasa run actions \
     --port 5055 \
@@ -42,10 +42,10 @@ rasa run actions \
 ACTION_PID=$!
 echo "  Action server PID: $ACTION_PID"
 
-sleep 3  # Give action server time to start
+sleep 3  # Αναμονή για εκκίνηση action server
 
 # ── Rasa server ────────────────────────────────────────────────────────────
-echo "Starting Rasa server on port 5005..."
+echo "Εκκίνηση Rasa server στη θύρα 5005..."
 rasa run \
     --enable-api \
     --cors "*" \
@@ -73,5 +73,5 @@ echo "Open index.html in browser (or: python3 -m http.server 8080)"
 echo ""
 echo "To stop: kill $ACTION_PID $RASA_PID"
 
-# Save PIDs for easy cleanup
+# Αποθήκευση PIDs για εύκολο καθαρισμό
 echo "$ACTION_PID $RASA_PID" > "$LOG_DIR/footbot.pids"

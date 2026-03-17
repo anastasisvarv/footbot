@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# update
+# update (ενημέρωση)
 # ---------------------------------------------------------------------------
 
 def cmd_update(league_filter: str | None) -> int:
@@ -53,7 +53,7 @@ def cmd_update(league_filter: str | None) -> int:
         for slug, cfg in leagues.items():
             logger.info("=== %s (%s) ===", cfg["name"], slug)
 
-            # --- Discover seasons ---
+            # --- Ανακάλυψη σεζόν ---
             try:
                 seasons = scraper.get_seasons(
                     cfg["fbref_id"], cfg["fbref_slug"], SEASONS_TO_FETCH
@@ -68,22 +68,22 @@ def cmd_update(league_filter: str | None) -> int:
                 error_count += 1
                 continue
 
-            # --- Scrape each season ---
+            # --- Scraping κάθε σεζόν ---
             for info in seasons:
                 season = info["season"]
                 logger.info("  Scraping %s %s …", cfg["name"], season)
                 try:
-                    # Standings
+                    # Βαθμολογία
                     raw_standings = scraper.get_standings(info["stats_url"])
                     standings_df = clean_standings_df(raw_standings)
                     storage.save_standings(standings_df, slug, season)
 
-                    # Matches
+                    # Αγώνες
                     raw_matches = scraper.get_matches(info["fixtures_url"])
                     matches_df = clean_matches_df(raw_matches)
                     storage.save_matches(matches_df, slug, season)
 
-                    # Teams — union of standings + fixture team names
+                    # Ομάδες — ένωση ονομάτων από βαθμολογία + αγώνες
                     team_names = list({
                         *standings_df["team"].tolist(),
                         *matches_df["home_team"].tolist(),
@@ -92,7 +92,7 @@ def cmd_update(league_filter: str | None) -> int:
                     teams = build_team_aliases(team_names)
                     storage.save_teams(teams, slug, season)
 
-                    # Metadata
+                    # Μεταδεδομένα
                     storage.save_metadata(
                         slug,
                         season,
@@ -123,7 +123,7 @@ def cmd_update(league_filter: str | None) -> int:
 
 
 # ---------------------------------------------------------------------------
-# validate
+# validate (επικύρωση)
 # ---------------------------------------------------------------------------
 
 def cmd_validate() -> int:
@@ -136,7 +136,7 @@ def cmd_validate() -> int:
 
 
 # ---------------------------------------------------------------------------
-# Entry point
+# Σημείο εισόδου
 # ---------------------------------------------------------------------------
 
 def main() -> None:

@@ -13,7 +13,7 @@ import predictor as pred
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Βοηθητικές συναρτήσεις
 # ---------------------------------------------------------------------------
 
 def _stats(scored=1.5, conceded=1.2,
@@ -30,7 +30,7 @@ def _stats(scored=1.5, conceded=1.2,
 
 
 # ---------------------------------------------------------------------------
-# Output structure
+# Δομή εξόδου
 # ---------------------------------------------------------------------------
 
 class TestPredictOutputStructure:
@@ -59,7 +59,7 @@ class TestPredictOutputStructure:
 
 
 # ---------------------------------------------------------------------------
-# league_avg parameter
+# Παράμετρος league_avg
 # ---------------------------------------------------------------------------
 
 class TestPredictLeagueAvg:
@@ -78,7 +78,7 @@ class TestPredictLeagueAvg:
 
 
 # ---------------------------------------------------------------------------
-# Home/away split routing
+# Δρομολόγηση home/away split
 # ---------------------------------------------------------------------------
 
 class TestPredictHomeAwaySplits:
@@ -109,13 +109,13 @@ class TestPredictHomeAwaySplits:
 
 
 # ---------------------------------------------------------------------------
-# Extreme inputs
+# Ακραίες τιμές εισόδου
 # ---------------------------------------------------------------------------
 
 class TestPredictExtremes:
     def test_dominant_home_team(self):
-        # xG is clamped to 8.0 and the grid covers only 0-7 goals, so
-        # probability mass is truncated; home win > away win is the key check.
+        # Το xG περιορίζεται στο 8.0 και το πλέγμα καλύπτει μόνο 0-7 γκολ,
+        # οπότε η πιθανότητα είναι κομμένη· το key check είναι home win > away win.
         result = pred.predict(_stats(5.0, 0.5), _stats(0.5, 4.0))
         assert result["home_win_pct"] > result["away_win_pct"]
         assert result["home_win_pct"] > 40.0
@@ -136,6 +136,7 @@ class TestPredictExtremes:
 
 # ---------------------------------------------------------------------------
 # format_form()
+# (μορφοποίηση φόρμας)
 # ---------------------------------------------------------------------------
 
 class TestFormatForm:
@@ -159,7 +160,7 @@ class TestFormatForm:
 
 
 # ---------------------------------------------------------------------------
-# LEAGUE_AVG_DEFAULTS sanity
+# Έλεγχος ορθότητας LEAGUE_AVG_DEFAULTS
 # ---------------------------------------------------------------------------
 
 class TestLeagueAvgDefaults:

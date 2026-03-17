@@ -27,7 +27,7 @@ class FootbotHandler(http.server.BaseHTTPRequestHandler):
         print(f"[{self.address_string()}] {fmt % args}")
 
     # ------------------------------------------------------------------
-    # GET — static files or Rasa health check
+    # GET — στατικά αρχεία ή health check Rasa
     # ------------------------------------------------------------------
 
     def do_GET(self):
@@ -50,7 +50,7 @@ class FootbotHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     # ------------------------------------------------------------------
-    # POST — proxy to Rasa
+    # POST — proxy προς Rasa
     # ------------------------------------------------------------------
 
     def do_POST(self):
@@ -60,7 +60,7 @@ class FootbotHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404)
 
     # ------------------------------------------------------------------
-    # OPTIONS — CORS preflight (needed when ngrok adds browser checks)
+    # OPTIONS — CORS preflight (απαιτείται όταν το ngrok προσθέτει browser checks)
     # ------------------------------------------------------------------
 
     def do_OPTIONS(self):
@@ -69,7 +69,7 @@ class FootbotHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     # ------------------------------------------------------------------
-    # Internals
+    # Εσωτερικές μέθοδοι
     # ------------------------------------------------------------------
 
     def _proxy_to_rasa(self, method, path):
