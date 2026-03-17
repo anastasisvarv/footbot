@@ -6,7 +6,7 @@ class FootbotClient {
         this.inputField = document.getElementById('chatbot-input');
         this.sendBtn = document.getElementById('send-btn');
         this.statusBadge = document.getElementById('connection-status');
-        this.rasaUrl = 'http://localhost:5005/webhooks/rest/webhook';
+        this.rasaUrl = '/webhooks/rest/webhook';
         this.senderId = this._getSessionId();
         this._isSending = false;
 
@@ -17,7 +17,7 @@ class FootbotClient {
     _getSessionId() {
         let id = localStorage.getItem('footbot_session_id');
         if (!id) {
-            id = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            id = 'user_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
             localStorage.setItem('footbot_session_id', id);
         }
         return id;
@@ -53,7 +53,7 @@ class FootbotClient {
     async checkConnection() {
         this._setStatus('checking', 'Connecting...');
         try {
-            const resp = await fetch('http://localhost:5005/', { method: 'GET', signal: AbortSignal.timeout(3000) });
+            const resp = await fetch('/health', { method: 'GET', signal: AbortSignal.timeout(3000) });
             if (resp.ok || resp.status === 404) {
                 this._setStatus('connected', 'Live');
             } else {
