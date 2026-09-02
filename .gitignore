@@ -43,3 +43,10 @@ footbot.pids
 .vscode/
 *.swp
 *.swo
+
+# Backup files
+*.bak
+
+# Evaluation output
+evaluation_results*.csv
+results/
