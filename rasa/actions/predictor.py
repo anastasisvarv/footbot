@@ -36,12 +36,19 @@ LEAGUE_AVG_DEFAULTS: Dict[str, float] = {
 MAX_GOALS = 7          # μέγεθος πλέγματος: 0..MAX_GOALS για κάθε ομάδα
 HOME_ADVANTAGE = 1.20  # τυπικός πολλαπλασιαστής πλεονεκτήματος έδρας
 
+# Ποσοστό των τερμάτων ενός αγώνα που σημειώνει κατά μέσο όρο η γηπεδούχος.
+# Χρησιμοποιείται μόνο ως εφεδρεία, όταν δεν δίνονται πραγματικοί μέσοι όροι
+# γηπεδούχου/φιλοξενούμενης. Τιμή από τα δεδομένα των έξι πρωταθλημάτων.
+HOME_GOAL_SHARE = 0.545
+
 
 def predict(
     home_stats: Dict,
     away_stats: Dict,
     league: str = "default",
     league_avg: Optional[float] = None,
+    league_home_avg: Optional[float] = None,
+    league_away_avg: Optional[float] = None,
 ) -> Dict:
     """
     Run Poisson prediction for a home vs away matchup.
@@ -54,8 +61,13 @@ def predict(
                     Optionally: 'avg_goals_scored_away', 'avg_goals_conceded_away'.
         league:     league slug/name for LEAGUE_AVG_DEFAULTS lookup (used only if
                     league_avg is None).
-        league_avg: Real computed goals-per-match average for the league. If provided,
-                    overrides the LEAGUE_AVG_DEFAULTS lookup.
+        league_avg: Real computed goals-per-match average for the league (both teams
+                    combined). If provided, overrides the LEAGUE_AVG_DEFAULTS lookup.
+        league_home_avg: League average goals scored by the HOME team per match.
+        league_away_avg: League average goals scored by the AWAY team per match.
+                    When both are given they are used as the normalisers for the
+                    strength indices; otherwise they are derived from league_avg
+                    using HOME_GOAL_SHARE.
 
     Returns:
         dict with home_win_pct, draw_pct, away_win_pct, home_xg, away_xg,
@@ -74,25 +86,37 @@ def predict(
         and away_stats.get("avg_goals_conceded_away") is not None
     )
 
-    if _has_splits:
-        home_xg = (
-            (home_stats["avg_goals_scored_home"] / league_avg)
-            * (away_stats["avg_goals_conceded_away"] / league_avg)
-            * league_avg
-        )
-        away_xg = (
-            (away_stats["avg_goals_scored_away"] / league_avg)
-            * (home_stats["avg_goals_conceded_home"] / league_avg)
-            * league_avg
-        )
+    # Οι δείκτες ισχύος πρέπει να κανονικοποιούνται με μέσο όρο ΑΝΑ ΟΜΑΔΑ, όχι με
+    # τον συνολικό μέσο όρο τερμάτων ανά αγώνα (που αφορά και τις δύο ομάδες μαζί).
+    # Για τα venue splits ο σωστός παρονομαστής είναι ο μέσος όρος τερμάτων της
+    # γηπεδούχου (Lh) για το λ της γηπεδούχου και της φιλοξενούμενης (La) για το λ
+    # της φιλοξενούμενης. Σημειώνεται ότι τα τέρματα που δέχεται η φιλοξενούμενη
+    # εκτός έδρας αντιστοιχούν στα τέρματα που σημειώνουν οι γηπεδούχοι, άρα
+    # κανονικοποιούνται επίσης με Lh (και αντιστρόφως).
+    if league_home_avg is not None and league_away_avg is not None:
+        Lh, La = league_home_avg, league_away_avg
     else:
-        # Fallback: συνολικοί μέσοι όροι + πολλαπλασιαστής HOME_ADVANTAGE
-        home_attack  = home_stats["avg_goals_scored"]  / league_avg
-        home_defense = home_stats["avg_goals_conceded"] / league_avg
-        away_attack  = away_stats["avg_goals_scored"]  / league_avg
-        away_defense = away_stats["avg_goals_conceded"] / league_avg
-        home_xg = home_attack * away_defense * league_avg * HOME_ADVANTAGE
-        away_xg = away_attack * home_defense * league_avg
+        Lh = league_avg * HOME_GOAL_SHARE
+        La = league_avg * (1.0 - HOME_GOAL_SHARE)
+
+    if _has_splits:
+        home_attack  = home_stats["avg_goals_scored_home"]   / Lh
+        away_defense = away_stats["avg_goals_conceded_away"] / Lh
+        home_xg = home_attack * away_defense * Lh
+
+        away_attack  = away_stats["avg_goals_scored_away"]    / La
+        home_defense = home_stats["avg_goals_conceded_home"]  / La
+        away_xg = away_attack * home_defense * La
+    else:
+        # Fallback: συνολικοί μέσοι όροι, κανονικοποιημένοι με τον μέσο όρο ανά
+        # ομάδα, συν ρητός πολλαπλασιαστής πλεονεκτήματος έδρας.
+        per_team = league_avg / 2.0
+        home_attack  = home_stats["avg_goals_scored"]   / per_team
+        home_defense = home_stats["avg_goals_conceded"] / per_team
+        away_attack  = away_stats["avg_goals_scored"]   / per_team
+        away_defense = away_stats["avg_goals_conceded"] / per_team
+        home_xg = home_attack * away_defense * per_team * HOME_ADVANTAGE
+        away_xg = away_attack * home_defense * per_team
 
     # Περιορισμός σε λογικό εύρος
     home_xg = max(0.1, min(home_xg, 8.0))

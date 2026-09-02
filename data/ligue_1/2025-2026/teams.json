@@ -53,18 +53,24 @@
       "aliases": []
     },
     {
+      "canonical": "PSG",
+      "aliases": []
+    },
+    {
       "canonical": "Paris FC",
       "aliases": [
         "Paris"
       ]
     },
     {
-      "canonical": "Paris Saint-Germain",
+      "canonical": "Rennes",
       "aliases": []
     },
     {
-      "canonical": "Rennes",
-      "aliases": []
+      "canonical": "Saint-Étienne",
+      "aliases": [
+        "Saint-Etienne"
+      ]
     },
     {
       "canonical": "Strasbourg",

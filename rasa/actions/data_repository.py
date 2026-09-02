@@ -68,6 +68,7 @@ _LEAGUE_ALIASES: Dict[str, str] = {
     "french league":                 "ligue_1",
     "france":                        "ligue_1",
     # Super League Greece (Ελλάδα)
+    "super":                         "super_league_greece",
     "super league":                  "super_league_greece",
     "super league greece":           "super_league_greece",
     "greek super league":            "super_league_greece",
@@ -143,8 +144,13 @@ class DataRepository:
             if not league_dir.is_dir():
                 continue
             slug = league_dir.name
+            def _season_key(name: str):
+                # "2025-2026" sorts above "current" or any non-year slug
+                return (0, name) if name[:4].isdigit() else (1, name)
+
             seasons = sorted(
                 [p.name for p in league_dir.iterdir() if p.is_dir()],
+                key=_season_key,
                 reverse=True,
             )
             if not seasons:

@@ -21,6 +21,7 @@ Baselines compared
 Usage
 -----
   python evaluate.py                           # all leagues, most recent season
+  python evaluate.py --all-seasons             # all leagues, every scraped season
   python evaluate.py --league premier_league   # one league only
   python evaluate.py --export results.csv      # also save per-match predictions to CSV
   python evaluate.py --min-matches 8           # require ≥8 prior matches (default 5)
@@ -41,11 +42,12 @@ from typing import Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "rasa" / "actions"))
 
 import pandas as pd
 
 from pipeline.config import DATA_DIR, LEAGUES
-from rasa.actions.predictor import LEAGUE_AVG_DEFAULTS, predict
+from predictor import LEAGUE_AVG_DEFAULTS, predict
 
 
 # ---------------------------------------------------------------------------
@@ -159,14 +161,16 @@ def evaluate_league(
     slug: str,
     league_name: str,
     min_prior_matches: int = 5,
+    all_seasons: bool = False,
 ) -> List[Dict]:
     """
     Run backtesting for a single league.
 
     Strategy
     --------
-    * Test set  : all completed matches from the most recent scraped season.
-    * Train set : all matches from earlier seasons (no overlap with test).
+    * Test set  : all completed matches from the most recent scraped season
+                  (or from every scraped season, when *all_seasons* is True).
+    * Train set : all matches from strictly earlier seasons (no overlap with test).
     * League avg: computed from completed prior-season matches (no test leakage).
     * Per match : team stats computed from all matches strictly before match date.
 
@@ -201,107 +205,138 @@ def evaluate_league(
     all_matches["date"] = pd.to_datetime(all_matches["date"], errors="coerce")
     all_matches = all_matches.dropna(subset=["date"])
 
-    # Test set: πιο πρόσφατη σεζόν, μόνο ολοκληρωμένοι αγώνες
-    test_season = seasons[0]
-    test_df = (
-        all_matches[
-            (all_matches["season"] == test_season)
-            & all_matches["home_goals"].notna()
-            & all_matches["away_goals"].notna()
-        ]
-        .sort_values("date")
-        .reset_index(drop=True)
-    )
-
-    if len(test_df) < 10:
-        print(
-            f"  [SKIP] {league_name}: only {len(test_df)} completed matches "
-            f"in {test_season} — need ≥10"
-        )
-        return []
-
-    # Μέσος όρος πρωταθλήματος από προηγούμενες σεζόν (αποφεύγει data leakage στο test set)
-    prior_completed = all_matches[
-        (all_matches["season"] != test_season)
-        & all_matches["home_goals"].notna()
-        & all_matches["away_goals"].notna()
-    ]
-    if len(prior_completed) >= 20:
-        total_goals = int(
-            (prior_completed["home_goals"] + prior_completed["away_goals"]).sum()
-        )
-        league_avg: float = round(total_goals / len(prior_completed), 3)
-    else:
-        league_avg = LEAGUE_AVG_DEFAULTS.get(
-            league_name.lower(), LEAGUE_AVG_DEFAULTS["default"]
-        )
+    test_seasons = seasons if all_seasons else [seasons[0]]
 
     results: List[Dict] = []
     skipped = 0
 
-    for _, match in test_df.iterrows():
-        home_team = match["home_team"]
-        away_team = match["away_team"]
-        match_date = match["date"]
-        hg = int(match["home_goals"])
-        ag = int(match["away_goals"])
-
-        # Πραγματικό αποτέλεσμα 1X2
-        if hg > ag:
-            actual = "H"
-        elif hg == ag:
-            actual = "D"
-        else:
-            actual = "A"
-
-        # Υπολογισμός στατιστικών με αυστηρά προηγούμενα δεδομένα
-        home_stats = _team_stats_before(
-            all_matches, home_team, match_date, min_n=min_prior_matches
-        )
-        away_stats = _team_stats_before(
-            all_matches, away_team, match_date, min_n=min_prior_matches
-        )
-
-        if not home_stats or not away_stats:
-            skipped += 1
+    for i, test_season in enumerate(seasons):
+        if test_season not in test_seasons:
             continue
 
-        pred = predict(home_stats, away_stats, league=slug, league_avg=league_avg)
-        p_h = pred["home_win_pct"] / 100.0
-        p_d = pred["draw_pct"] / 100.0
-        p_a = pred["away_win_pct"] / 100.0
-
-        predicted = max(
-            [("H", p_h), ("D", p_d), ("A", p_a)], key=lambda x: x[1]
-        )[0]
-
-        results.append(
-            {
-                "league":            league_name,
-                "season":            test_season,
-                "date":              str(match_date.date()),
-                "home_team":         home_team,
-                "away_team":         away_team,
-                "actual_score":      f"{hg}-{ag}",
-                "actual_outcome":    actual,
-                "predicted_outcome": predicted,
-                "correct":           predicted == actual,
-                "p_home":            round(p_h, 4),
-                "p_draw":            round(p_d, 4),
-                "p_away":            round(p_a, 4),
-                "brier":             round(brier_score(p_h, p_d, p_a, actual), 4),
-                "rps":               round(rps(p_h, p_d, p_a, actual), 4),
-                "home_xg":           pred["home_xg"],
-                "away_xg":           pred["away_xg"],
-                "most_likely_score": pred["most_likely_score"],
-                "league_avg_used":   round(league_avg, 3),
-            }
+        test_df = (
+            all_matches[
+                (all_matches["season"] == test_season)
+                & all_matches["home_goals"].notna()
+                & all_matches["away_goals"].notna()
+            ]
+            .sort_values("date")
+            .reset_index(drop=True)
         )
 
-    print(
-        f"  {league_name:<25} {len(results):>4} predictions  "
-        f"({skipped} skipped — insufficient prior data)"
-    )
+        if len(test_df) < 10:
+            print(
+                f"  [SKIP] {league_name} {test_season}: only {len(test_df)} "
+                f"completed matches — need ≥10"
+            )
+            continue
+
+        # Μέσος όρος πρωταθλήματος από αυστηρά προγενέστερες σεζόν
+        # (αποφεύγει data leakage — ποτέ δεν κοιτάμε μελλοντικές σεζόν ως προς το test)
+        prior_completed = all_matches[
+            all_matches["season"].isin(seasons[i + 1:])
+            & all_matches["home_goals"].notna()
+            & all_matches["away_goals"].notna()
+        ]
+        if len(prior_completed) >= 20:
+            total_goals = int(
+                (prior_completed["home_goals"] + prior_completed["away_goals"]).sum()
+            )
+            league_avg: float = round(total_goals / len(prior_completed), 3)
+            # Χωριστοί μέσοι όροι γηπεδούχου/φιλοξενούμενης, από τις ίδιες
+            # αυστηρά προγενέστερες σεζόν. Αυτοί είναι οι σωστοί παρονομαστές
+            # για τους δείκτες επιθετικής/αμυντικής ισχύος: ο συνολικός μέσος
+            # όρος ανά αγώνα αφορά και τις δύο ομάδες μαζί και θα υποδιπλασίαζε
+            # τα λ.
+            league_home_avg: Optional[float] = round(
+                float(prior_completed["home_goals"].sum()) / len(prior_completed), 3
+            )
+            league_away_avg: Optional[float] = round(
+                float(prior_completed["away_goals"].sum()) / len(prior_completed), 3
+            )
+        else:
+            league_avg = LEAGUE_AVG_DEFAULTS.get(
+                league_name.lower(), LEAGUE_AVG_DEFAULTS["default"]
+            )
+            league_home_avg = None
+            league_away_avg = None
+
+        season_results = 0
+        for _, match in test_df.iterrows():
+            home_team = match["home_team"]
+            away_team = match["away_team"]
+            match_date = match["date"]
+            hg = int(match["home_goals"])
+            ag = int(match["away_goals"])
+
+            # Πραγματικό αποτέλεσμα 1X2
+            if hg > ag:
+                actual = "H"
+            elif hg == ag:
+                actual = "D"
+            else:
+                actual = "A"
+
+            # Υπολογισμός στατιστικών με αυστηρά προηγούμενα δεδομένα
+            home_stats = _team_stats_before(
+                all_matches, home_team, match_date, min_n=min_prior_matches
+            )
+            away_stats = _team_stats_before(
+                all_matches, away_team, match_date, min_n=min_prior_matches
+            )
+
+            if not home_stats or not away_stats:
+                skipped += 1
+                continue
+
+            pred = predict(
+                home_stats, away_stats,
+                league=slug,
+                league_avg=league_avg,
+                league_home_avg=league_home_avg,
+                league_away_avg=league_away_avg,
+            )
+            p_h = pred["home_win_pct"] / 100.0
+            p_d = pred["draw_pct"] / 100.0
+            p_a = pred["away_win_pct"] / 100.0
+
+            predicted = max(
+                [("H", p_h), ("D", p_d), ("A", p_a)], key=lambda x: x[1]
+            )[0]
+
+            results.append(
+                {
+                    "league":            league_name,
+                    "season":            test_season,
+                    "date":              str(match_date.date()),
+                    "home_team":         home_team,
+                    "away_team":         away_team,
+                    "actual_score":      f"{hg}-{ag}",
+                    "actual_outcome":    actual,
+                    "predicted_outcome": predicted,
+                    "correct":           predicted == actual,
+                    "p_home":            round(p_h, 4),
+                    "p_draw":            round(p_d, 4),
+                    "p_away":            round(p_a, 4),
+                    "brier":             round(brier_score(p_h, p_d, p_a, actual), 4),
+                    "rps":               round(rps(p_h, p_d, p_a, actual), 4),
+                    "home_xg":           pred["home_xg"],
+                    "away_xg":           pred["away_xg"],
+                    "most_likely_score": pred["most_likely_score"],
+                    "league_avg_used":   round(league_avg, 3),
+                    "league_home_avg":   league_home_avg,
+                    "league_away_avg":   league_away_avg,
+                }
+            )
+            season_results += 1
+
+        print(
+            f"  {league_name:<25} {test_season:<11} {season_results:>4} predictions"
+        )
+
+    if skipped:
+        print(f"  {league_name:<25} ({skipped} total skipped — insufficient prior data)")
+
     return results
 
 
@@ -363,13 +398,15 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
     avg_brier  = sum(r["brier"] for r in all_results) / n
     avg_rps    = sum(r["rps"] for r in all_results) / n
 
-    # Ανάλυση ανά πρωτάθλημα
+    # Ανάλυση ανά πρωτάθλημα + σεζόν
     leagues_seen = sorted({r["league"] for r in all_results})
-    per_league: Dict[str, Dict] = {}
-    for league in leagues_seen:
-        lr = [r for r in all_results if r["league"] == league]
+    groups = sorted({(r["league"], r["season"]) for r in all_results},
+                     key=lambda g: (g[0], g[1]), reverse=False)
+    per_league_season: Dict[tuple, Dict] = {}
+    for league, season in groups:
+        lr = [r for r in all_results if r["league"] == league and r["season"] == season]
         ln = len(lr)
-        per_league[league] = {
+        per_league_season[(league, season)] = {
             "n":        ln,
             "accuracy": sum(1 for r in lr if r["correct"]) / ln,
             "brier":    sum(r["brier"] for r in lr) / ln,
@@ -380,7 +417,7 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
     print("\n" + "=" * W)
     print("  FOOTBOT — MODEL EVALUATION REPORT")
     print("=" * W)
-    print(f"  Prediction model : Poisson (Dixon-Coles, venue-aware)")
+    print(f"  Prediction model : Poisson (venue-aware, exponentially weighted)")
     print(f"  Test matches     : {n}")
     print(f"  Leagues          : {', '.join(leagues_seen)}")
     print()
@@ -397,13 +434,13 @@ def print_report(all_results: List[Dict], baselines: Dict) -> None:
     print()
     print(f"  Outcome distribution  H:{_pct(baselines['h_freq'])}  D:{_pct(baselines['d_freq'])}  A:{_pct(baselines['a_freq'])}")
 
-    # Πίνακας ανά πρωτάθλημα
+    # Πίνακας ανά πρωτάθλημα + σεζόν
     print()
-    print(f"  {'LEAGUE':<28} {'N':>5}  {'ACCURACY':>9}  {'BRIER':>7}  {'RPS':>7}")
+    print(f"  {'LEAGUE':<22} {'SEASON':<11} {'N':>5}  {'ACCURACY':>9}  {'BRIER':>7}  {'RPS':>7}")
     print("  " + "-" * (W - 2))
-    for league, m in per_league.items():
+    for (league, season), m in per_league_season.items():
         print(
-            f"  {league:<28} {m['n']:>5}  {m['accuracy']:>9.4f}  "
+            f"  {league:<22} {season:<11} {m['n']:>5}  {m['accuracy']:>9.4f}  "
             f"{m['brier']:>7.4f}  {m['rps']:>7.4f}"
         )
 
@@ -445,6 +482,11 @@ def main() -> None:
         default=5,
         help="Minimum prior matches required per team before predicting (default: 5).",
     )
+    parser.add_argument(
+        "--all-seasons",
+        action="store_true",
+        help="Test on every scraped season, not just the most recent one.",
+    )
     args = parser.parse_args()
 
     target_leagues = (
@@ -459,7 +501,12 @@ def main() -> None:
     all_results: List[Dict] = []
     for slug, cfg in target_leagues.items():
         all_results.extend(
-            evaluate_league(slug, cfg["name"], min_prior_matches=args.min_matches)
+            evaluate_league(
+                slug,
+                cfg["name"],
+                min_prior_matches=args.min_matches,
+                all_seasons=args.all_seasons,
+            )
         )
 
     if not all_results:

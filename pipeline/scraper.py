@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import re
+import subprocess
 import time
 from typing import Dict, List, Optional
 
@@ -28,6 +29,25 @@ logger = logging.getLogger(__name__)
 REQUEST_DELAY   = 1.0   # δευτερόλεπτα μεταξύ φορτώσεων σελίδας (υποχρεωτικό)
 CF_WAIT_TIMEOUT = 20.0  # δευτερόλεπτα αναμονής για επίλυση Cloudflare challenge
 CF_POLL         = 0.5   # διάστημα polling κατά την αναμονή
+
+
+def _get_chrome_major_version() -> Optional[int]:
+    """Detect the installed Chrome major version so ChromeDriver matches exactly."""
+    candidates = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "google-chrome",
+        "google-chrome-stable",
+        "chromium",
+    ]
+    for binary in candidates:
+        try:
+            out = subprocess.check_output([binary, "--version"], stderr=subprocess.DEVNULL, text=True)
+            m = re.search(r"(\d+)\.\d+", out)
+            if m:
+                return int(m.group(1))
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            continue
+    return None
 
 # Τίτλοι σελίδας Cloudflare challenge (μπορεί να είναι τοπικοποιημένοι)
 _CF_TITLES = {"just a moment...", "περιμένετε...", "einen moment..."}
@@ -91,7 +111,8 @@ class FBrefScraper:
             opts = uc.ChromeOptions()
             opts.add_argument("--no-sandbox")
             opts.add_argument("--disable-dev-shm-usage")
-            self._driver = uc.Chrome(options=opts, headless=False, version_main=None)
+            chrome_ver = _get_chrome_major_version()
+            self._driver = uc.Chrome(options=opts, headless=False, version_main=chrome_ver)
         return self._driver
 
     # ------------------------------------------------------------------

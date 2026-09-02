@@ -310,14 +310,6 @@ curl -s -X POST http://localhost:5005/webhooks/rest/webhook \
 
 ---
 
-## Βιβλιογραφία
-
-- Maher, M.J. (1982). *Modelling association football scores.* Statistica Neerlandica, 36(3), 109-118.
-- Dixon, M. & Coles, S. (1997). *Modelling Association Football Scores and Inefficiencies in the Football Betting Market.* Applied Statistics, 46(2), 265-280.
-- Constantinou, A.C. & Fenton, N.E. (2012). *Solving the problem of inadequate scoring rules for assessing probabilistic football forecast models.* Journal of Quantitative Analysis in Sports, 8(1).
-- Rasa Open Source. (2023). *Rasa Documentation v3.6.* https://rasa.com/docs/rasa/
-
----
 
 ## Τεχνολογίες
 
